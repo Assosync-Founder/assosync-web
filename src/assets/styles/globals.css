@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@assosync/theme/collectineo.css";
+
+@theme {
+	--color-accent: oklch(0.3827 0.0347 264.99);
+	--color-accent-light: color-mix(in oklch, var(--color-accent), white 15%);
+	--color-accent-dark: color-mix(in oklch, var(--color-accent), black 12%);
+
+	--color-calendis: oklch(0.564 0.204 26.836);
+	--color-calendis-light: color-mix(in oklch, var(--color-accent), white 15%);
+	--color-calendis-dark: color-mix(in oklch, var(--color-accent), black 12%);
+
+	--color-collectineo: 	oklch(0.5158 0.1946 262.42);
+	--color-collectineo-light: color-mix(in oklch, var(--color-accent), white 15%);
+	--color-collectineo-dark: color-mix(in oklch, var(--color-accent), black 12%);
+}

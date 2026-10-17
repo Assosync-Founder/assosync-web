@@ -1,0 +1,16 @@
+autoInstallPeers: false
+
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  protobufjs: true
+  sharp: false
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - '@assosync/*'
+
+overrides:
+  '@grpc/grpc-js': 1.14.6
+  '@assosync/firestore>@react-native-firebase/app': '-'
+  '@assosync/firestore>@react-native-firebase/firestore': '-'
