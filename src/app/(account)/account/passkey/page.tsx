@@ -61,7 +61,7 @@ const PasskeyPage = async ({ searchParams }: PasskeyPageProps) => {
 		typeof authorizationId !== 'string' ||
 		!/^[A-Za-z0-9_-]{1,128}$/u.test(authorizationId)
 	) {
-		redirect('/login');
+		redirect(authConfig.routes.accountLogin);
 	}
 
 	const cookieStore = await cookies();
@@ -70,7 +70,7 @@ const PasskeyPage = async ({ searchParams }: PasskeyPageProps) => {
 	)?.value;
 
 	if (!browserToken) {
-		redirect('/login');
+		redirect(authConfig.routes.accountLogin);
 	}
 
 	const failureUri = await resolveFailureUri(
@@ -79,7 +79,7 @@ const PasskeyPage = async ({ searchParams }: PasskeyPageProps) => {
 	);
 
 	if (!failureUri) {
-		redirect('/login');
+		redirect(authConfig.routes.accountLogin);
 	}
 
 	return (

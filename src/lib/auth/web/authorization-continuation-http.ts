@@ -219,7 +219,7 @@ const handleWebAuthorizationContinuation = async (
 		}
 
 		const confirmationUrl = new URL(
-			'/confirm-device',
+			authConfig.routes.accountConfirmDevice,
 			resolveRequestOrigin(request)
 		);
 

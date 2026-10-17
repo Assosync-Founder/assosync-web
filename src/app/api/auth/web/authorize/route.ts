@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import authConfig from '@/config/auth';
 import {
 	assertAccountHostname,
 	AuthHttpError,
@@ -54,7 +55,7 @@ export const GET = async (
 
 		const continuationPath = issued.request.identity.idToken
 			? '/api/auth/web/continue'
-			: '/passkey';
+			: authConfig.routes.accountPasskey;
 		const continuationUrl = new URL(
 			continuationPath,
 			resolveRequestOrigin(request)

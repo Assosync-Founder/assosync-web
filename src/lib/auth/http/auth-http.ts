@@ -16,6 +16,7 @@ const MAXIMUM_REQUIRED_STRING_LENGTH = 8_192;
 const AUTHENTICATION_IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{1,128}$/u;
 const ACCOUNT_HOSTNAMES = new Set([
 	'account.assosync.fr',
+	'preview.assosync.fr',
 	'account.localhost'
 ]);
 

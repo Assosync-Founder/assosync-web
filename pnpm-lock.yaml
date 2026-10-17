@@ -184,8 +184,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1(firebase-admin@14.5.0(@firebase/app-compat@0.5.19)(@firebase/app@0.16.3)(supports-color@8.1.1))(firebase@13.0.0)
       '@assosync/proxy':
-        specifier: ^0.1.5
-        version: 0.1.5(next@16.4.2(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
+        specifier: ^0.1.9
+        version: 0.1.9(next@16.4.2(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))
       '@assosync/theme':
         specifier: ^1.1.0
         version: 1.1.0
@@ -273,8 +273,8 @@ packages:
       firebase: '>=12.0.0 <14'
       firebase-admin: '>=13.0.0 <15'
 
-  '@assosync/proxy@0.1.5':
-    resolution: {integrity: sha512-buL8dQq91meIqaR22aczBqx9PanBOeiI/C1emFDM4dMuXE8wO+b1sQgZB8UhrlnUMHHx/j+wXT4rGp0NCX2PPw==, tarball: https://npm.pkg.github.com/download/@assosync/proxy/0.1.5/bb745d8a41552c906befadf9112be4693a557812}
+  '@assosync/proxy@0.1.9':
+    resolution: {integrity: sha512-/iPthxHOXZT6ev5XDc6p7NfBIRB/dEgtZei2d2rfwHLipDVEfNBRpqehizGs3Z9LMrHbqLyU73zxixDkUrk0WA==, tarball: https://npm.pkg.github.com/download/@assosync/proxy/0.1.9/913953a92e3a82d01b298c439b07d2d033373bc5}
     engines: {node: 24.15.0}
     peerDependencies:
       next: '>=16.0.0 <17'
@@ -2427,7 +2427,7 @@ snapshots:
       firebase: 13.0.0
       firebase-admin: 14.5.0(@firebase/app-compat@0.5.19)(@firebase/app@0.16.3)(supports-color@8.1.1)
 
-  '@assosync/proxy@0.1.5(next@16.4.2(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))':
+  '@assosync/proxy@0.1.9(next@16.4.2(@babel/core@7.29.7(supports-color@8.1.1))(@opentelemetry/api@1.9.1)(@types/node@20.19.43)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))':
     dependencies:
       '@upstash/ratelimit': 2.2.0(@upstash/redis@1.39.0)
       '@upstash/redis': 1.39.0

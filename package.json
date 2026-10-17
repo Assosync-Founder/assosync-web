@@ -14,7 +14,7 @@
     "@assosync/email": "^0.4.4",
     "@assosync/firebase": "^0.1.2",
     "@assosync/firestore": "^0.2.1",
-    "@assosync/proxy": "^0.1.5",
+    "@assosync/proxy": "^0.1.9",
     "@assosync/theme": "^1.1.0",
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",

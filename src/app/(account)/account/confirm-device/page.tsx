@@ -63,7 +63,7 @@ const ConfirmDevicePage = async ({
 	const verificationId = readIdentifier(parameters.verification);
 
 	if (!authorizationId || !deviceId || !verificationId) {
-		redirect('/login');
+		redirect(authConfig.routes.accountLogin);
 	}
 
 	const cookieStore = await cookies();
@@ -73,7 +73,7 @@ const ConfirmDevicePage = async ({
 	const deviceToken = cookieStore.get(authConfig.cookieNames.device)?.value;
 
 	if (!authorizationToken || !verificationToken || !deviceToken) {
-		redirect('/login');
+		redirect(authConfig.routes.accountLogin);
 	}
 
 	const authorization = await resolveActiveAuthorization(
@@ -82,7 +82,7 @@ const ConfirmDevicePage = async ({
 	);
 
 	if (!authorization) {
-		redirect('/login');
+		redirect(authConfig.routes.accountLogin);
 	}
 
 	const client = authConfig.webSso.clients.find((candidate) => {
@@ -90,7 +90,7 @@ const ConfirmDevicePage = async ({
 	});
 
 	if (!client) {
-		redirect('/login');
+		redirect(authConfig.routes.accountLogin);
 	}
 
 	return (
