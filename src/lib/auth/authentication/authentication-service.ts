@@ -20,6 +20,26 @@ import type {
 	StartAuthenticationResult
 } from '@/types/auth';
 
+/**
+ * Records the exact authentication stage that rejected an operation.
+ * @template Result
+ * @param operation - Stable authentication operation identifier.
+ * @param action - Asynchronous operation to observe.
+ * @returns The operation result.
+ */
+const observeAuthenticationOperation = async <Result>(
+	operation: string,
+	action: () => Promise<Result>
+): Promise<Result> => {
+	try {
+		return await action();
+	} catch (error: unknown) {
+		logAuthServerError(error, operation);
+
+		return Promise.reject(error);
+	}
+};
+
 /** Coordinates primary authentication, devices, verification, and sessions. */
 class AuthenticationService {
 	/**
@@ -73,17 +93,21 @@ class AuthenticationService {
 			'The application identifier is required.'
 		);
 
-		const identity = await this.verifyIdentity(
-			input.idToken
+		const identity = await observeAuthenticationOperation(
+			'authentication_identity_verification',
+			async () => this.verifyIdentity(input.idToken)
 		);
 
-		const decision = await this.devices.prepareLogin({
-			userId: identity.userId,
-			applicationId: input.applicationId,
-			deviceToken: input.deviceToken,
-			displayName: input.deviceDisplayName ?? null,
-			detectedInformation: input.detectedDeviceInformation
-		});
+		const decision = await observeAuthenticationOperation(
+			'authentication_device_preparation',
+			async () => this.devices.prepareLogin({
+				userId: identity.userId,
+				applicationId: input.applicationId,
+				deviceToken: input.deviceToken,
+				displayName: input.deviceDisplayName ?? null,
+				detectedInformation: input.detectedDeviceInformation
+			})
+		);
 
 		if (decision.status === 'session_ready') {
 			if (!input.deviceToken) {
@@ -144,7 +168,12 @@ class AuthenticationService {
 		}
 
 		const issuedVerification =
-			await this.verifications.startEmail(verificationInput);
+			await observeAuthenticationOperation(
+				'authentication_email_verification_start',
+				async () => this.verifications.startEmail(
+					verificationInput
+				)
+			);
 
 		let deliveryFailed = false;
 		let deliveryError: unknown;
@@ -158,6 +187,11 @@ class AuthenticationService {
 		} catch (error: unknown) {
 			deliveryFailed = true;
 			deliveryError = error;
+
+			logAuthServerError(
+				error,
+				'authentication_email_delivery'
+			);
 		}
 
 		if (deliveryFailed) {
