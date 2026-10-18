@@ -16,33 +16,17 @@ import redis from '@/services/redis/redis.server';
 import resend from '@/services/resend/resend.server';
 import type { DeviceVerificationModePolicy } from '@/types/auth';
 
-const verificationRepository =
-	createDeviceVerificationRepository(redis);
+const verificationRepository = createDeviceVerificationRepository(redis);
 
-const verificationRateLimitRepository =
-	createEmailVerificationRateLimitRepository(
-		redis,
-		authConfig.deviceVerification
-	);
+const verificationRateLimitRepository = createEmailVerificationRateLimitRepository(redis, authConfig.deviceVerification);
 
-const verificationRateLimitService =
-	new VerificationRateLimitService(
-		verificationRateLimitRepository,
-		securityEventService,
-		authWarningService
-	);
+const verificationRateLimitService = new VerificationRateLimitService(verificationRateLimitRepository, securityEventService, authWarningService);
 
-const verificationCodeHasher =
-	createHmacVerificationCodeHasher(
-		Env.private.authEmail.challengeSecret ?? ''
-	);
+const verificationCodeHasher = createHmacVerificationCodeHasher(Env.private.authEmail.challengeSecret ?? '');
 
 const mobileAwareVerificationPolicy: DeviceVerificationModePolicy = {
 	getAvailableModes: async (input) => {
-		const hasActiveMobileInstallation =
-			await mobileInstallationService.hasActiveMobileInstallation(
-				input.userId
-			);
+		const hasActiveMobileInstallation = await mobileInstallationService.hasActiveMobileInstallation(input.userId);
 
 		if (hasActiveMobileInstallation) {
 			return ['email_code', 'mobile_approval'];
@@ -63,8 +47,7 @@ const verificationService = new VerificationService(
 	mobileAwareVerificationPolicy
 );
 
-const verificationEmailService =
-	new VerificationEmailService(
+const verificationEmailService = new VerificationEmailService(
 		resend,
 		{
 			brands: [
@@ -72,25 +55,19 @@ const verificationEmailService =
 					applicationId: 'assosync',
 					emailType: 'assosync',
 					displayName: 'Assosync',
-					from:
-						Env.private.authEmail.noReplyFrom ??
-						''
+					from: Env.private.authEmail.noReplyFrom ?? ''
 				},
 				{
 					applicationId: 'calendis',
 					emailType: 'calendis',
 					displayName: 'Calendis',
-					from:
-						Env.private.authEmail.from.noReplyCalendis ??
-						''
+					from: Env.private.authEmail.from.noReplyCalendis ?? ''
 				},
 				{
 					applicationId: 'collectineo',
 					emailType: 'collectineo',
 					displayName: 'Collectineo',
-					from:
-						Env.private.authEmail.from.noReplyCollectineo ??
-						''
+					from: Env.private.authEmail.from.noReplyCollectineo ?? ''
 				}
 			]
 		}

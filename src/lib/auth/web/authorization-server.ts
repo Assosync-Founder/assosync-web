@@ -20,8 +20,7 @@ const clients = authConfig.webSso.clients.map((client) => {
 });
 
 /** Shared server-side Web SSO authorization service. */
-const webAuthorizationService =
-	new WebAuthorizationService(
+const webAuthorizationService = new WebAuthorizationService(
 		webAuthorizationRepository,
 		{
 			...authConfig.webSso,

@@ -5,8 +5,6 @@ import handleWebAuthorizationContinuation from '@/lib/auth/web/authorization-con
  * @param request - Incoming browser authorization request.
  * @returns A server-side redirect to confirmation or the product callback.
  */
-export const GET = async (
-	request: NextRequest
-): Promise<Response> => {
+export const GET = async (request: NextRequest): Promise<Response> => {
 	return handleWebAuthorizationContinuation(request);
 };

@@ -1,19 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-	startRegistration,
-	type PublicKeyCredentialCreationOptionsJSON
-} from '@simplewebauthn/browser';
+import { startRegistration, type PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/browser';
 import type { AccountPasskey } from '@/types/passkey';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return typeof value === 'object' && value !== null;
 };
 
-const isRegistrationOptions = (
-	value: unknown
-): value is PublicKeyCredentialCreationOptionsJSON => {
+const isRegistrationOptions = (value: unknown): value is PublicKeyCredentialCreationOptionsJSON => {
 	return (
 		isRecord(value) &&
 		typeof value.challenge === 'string' &&
@@ -42,11 +37,7 @@ const isAccountPasskey = (value: unknown): value is AccountPasskey => {
 };
 
 const readPasskeys = (value: unknown): readonly AccountPasskey[] => {
-	if (
-		!isRecord(value) ||
-		!Array.isArray(value.passkeys) ||
-		!value.passkeys.every(isAccountPasskey)
-	) {
+	if (!isRecord(value) || !Array.isArray(value.passkeys) || !value.passkeys.every(isAccountPasskey)) {
 		throw new TypeError('The passkey list response is invalid.');
 	}
 
@@ -54,10 +45,7 @@ const readPasskeys = (value: unknown): readonly AccountPasskey[] => {
 };
 
 const formatDate = (value: string): string => {
-	return new Intl.DateTimeFormat('fr-FR', {
-		dateStyle: 'long',
-		timeStyle: 'short'
-	}).format(new Date(value));
+	return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(value));
 };
 
 /** Lists and registers passkeys from the Account security settings. */
@@ -70,9 +58,7 @@ const PasskeyManagementView = () => {
 	const [message, setMessage] = useState<string | null>(null);
 
 	const loadPasskeys = async (): Promise<void> => {
-		const response = await fetch('/api/account/passkeys', {
-			cache: 'no-store'
-		});
+		const response = await fetch('/api/account/passkeys', { cache: 'no-store' });
 		const result: unknown = await response.json();
 
 		if (!response.ok) {
@@ -100,9 +86,7 @@ const PasskeyManagementView = () => {
 				{
 					method: 'PATCH',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						displayName: normalizedDisplayName
-					})
+					body: JSON.stringify({ displayName: normalizedDisplayName })
 				}
 			);
 
@@ -132,10 +116,7 @@ const PasskeyManagementView = () => {
 		setMessage(null);
 
 		try {
-			const response = await fetch(
-				`/api/account/passkeys/${encodeURIComponent(passkeyId)}`,
-				{ method: 'DELETE' }
-			);
+			const response = await fetch(`/api/account/passkeys/${encodeURIComponent(passkeyId)}`, { method: 'DELETE' });
 
 			if (!response.ok) {
 				setMessage('Impossible de supprimer cette passkey.');
@@ -173,35 +154,22 @@ const PasskeyManagementView = () => {
 		setMessage(null);
 
 		try {
-			const optionsResponse = await fetch(
-				'/api/account/passkeys/registration/options',
-				{ method: 'POST' }
-			);
+			const optionsResponse = await fetch('/api/account/passkeys/registration/options', { method: 'POST' });
 			const issued: unknown = await optionsResponse.json();
 
-			if (
-				!optionsResponse.ok ||
-				!isRecord(issued) ||
-				typeof issued.challengeId !== 'string' ||
-				!isRegistrationOptions(issued.options)
-			) {
+			if (!optionsResponse.ok || !isRecord(issued) || typeof issued.challengeId !== 'string' || !isRegistrationOptions(issued.options)) {
 				setMessage('Impossible d’ajouter cette passkey.');
 
 				return;
 			}
 
-			const credential = await startRegistration({
-				optionsJSON: issued.options
-			});
+			const credential = await startRegistration({ optionsJSON: issued.options });
 			const verificationResponse = await fetch(
 				'/api/account/passkeys/registration/verify',
 				{
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						challengeId: issued.challengeId,
-						response: credential
-					})
+					body: JSON.stringify({ challengeId: issued.challengeId, response: credential })
 				}
 			);
 

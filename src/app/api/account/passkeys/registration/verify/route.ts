@@ -3,14 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import authConfig from '@/config/auth';
 import detectDeviceInformation from '@/lib/auth/device/device-detection';
 import AuthError from '@/lib/auth/shared/auth-error';
-import {
-	assertSameOrigin,
-	createAuthErrorResponse,
-	readAuthenticationIdentifier,
-	readJsonBody,
-	readRequiredAuthCookie,
-	resolvePasskeyRelyingParty
-} from '@/lib/auth/http/auth-http';
+import { assertSameOrigin, createAuthErrorResponse, readAuthenticationIdentifier, readJsonBody, readRequiredAuthCookie, resolvePasskeyRelyingParty } from '@/lib/auth/http/auth-http';
 import resolveAccountRequestSession from '@/lib/auth/http/auth-request-session';
 import { readRegistrationResponse } from '@/lib/auth/passkey/passkey-http';
 import passkeyService from '@/lib/auth/passkey/passkey-server';
@@ -21,17 +14,9 @@ const MAXIMUM_PASSKEY_NAME_LENGTH = 80;
  * @param createdAt - Authenticated session creation time.
  * @throws {AuthError} When the authentication is too old.
  */
-const assertRecentAuthentication = (
-	createdAt: Date
-): void => {
-	if (
-		Date.now() - createdAt.getTime() >
-		authConfig.session.maxAuthenticationAgeMs
-	) {
-		throw new AuthError(
-			'session_expired',
-			'A recent authentication is required to add a passkey.'
-		);
+const assertRecentAuthentication = (createdAt: Date): void => {
+	if (Date.now() - createdAt.getTime() > authConfig.session.maxAuthenticationAgeMs) {
+		throw new AuthError('session_expired', 'A recent authentication is required to add a passkey.');
 	}
 };
 
@@ -63,10 +48,7 @@ export const POST = async (request: NextRequest): Promise<Response> => {
 			resolveAccountRequestSession(request),
 			readJsonBody(request)
 		]);
-		const browserToken = readRequiredAuthCookie(
-			cookieStore.get(authConfig.cookieNames.connection)?.value,
-			'session_invalid'
-		);
+		const browserToken = readRequiredAuthCookie(cookieStore.get(authConfig.cookieNames.connection)?.value, 'session_invalid');
 
 		assertRecentAuthentication(session.createdAt);
 

@@ -9,13 +9,6 @@ import firestoreServer from '@/services/firestore/firestore-server';
 const deviceRepository = createDeviceRepository(firestoreServer);
 
 /** Shared server-side trusted-device service. */
-const deviceService = new DeviceService(
-	deviceRepository,
-	{
-		pendingLifetimeMs: authConfig.device.pendingLifetimeMs,
-		trustedLifetimeMs: authConfig.device.trustedLifetimeMs
-	},
-	securityEventService
-);
+const deviceService = new DeviceService(deviceRepository, { pendingLifetimeMs: authConfig.device.pendingLifetimeMs, trustedLifetimeMs: authConfig.device.trustedLifetimeMs }, securityEventService);
 
 export default deviceService;

@@ -2,12 +2,7 @@ import 'server-only';
 
 import SecurityEventService from '@/lib/auth/audit/security-event-service';
 import AuthError from '@/lib/auth/shared/auth-error';
-import type {
-	AuthWarningNotifier,
-	EmailVerificationRateLimitDecision,
-	EmailVerificationRateLimitInput,
-	EmailVerificationRateLimitRepository
-} from '@/types/auth';
+import type { AuthWarningNotifier, EmailVerificationRateLimitDecision, EmailVerificationRateLimitInput, EmailVerificationRateLimitRepository } from '@/types/auth';
 
 /** Enforces progressive limits on verification email requests. */
 class VerificationRateLimitService {
@@ -29,11 +24,8 @@ class VerificationRateLimitService {
 	 * @param input - Account and application identity.
 	 * @throws {AuthError} When email delivery is temporarily blocked.
 	 */
-	readonly reserveInitialEmail = async (
-		input: EmailVerificationRateLimitInput
-	): Promise<void> => {
-		const decision =
-			await this.repository.reserveInitialEmail(input);
+	readonly reserveInitialEmail = async (input: EmailVerificationRateLimitInput): Promise<void> => {
+		const decision = await this.repository.reserveInitialEmail(input);
 
 		await this.assertAllowed(input, decision);
 	};
@@ -43,9 +35,7 @@ class VerificationRateLimitService {
 	 * @param input - Account and application identity.
 	 * @throws {AuthError} When email delivery is temporarily blocked.
 	 */
-	readonly assertResendAllowed = async (
-		input: EmailVerificationRateLimitInput
-	): Promise<void> => {
+	readonly assertResendAllowed = async (input: EmailVerificationRateLimitInput): Promise<void> => {
 		const decision = await this.repository.check(input);
 
 		await this.assertAllowed(input, decision);
@@ -56,15 +46,11 @@ class VerificationRateLimitService {
 	 * @param input - Account and application identity.
 	 * @returns Remaining blocking time in milliseconds.
 	 */
-	readonly penalize = async (
-		input: EmailVerificationRateLimitInput
-	): Promise<number> => {
+	readonly penalize = async (input: EmailVerificationRateLimitInput): Promise<number> => {
 		const decision = await this.repository.penalize(input);
 
 		if (decision.allowed) {
-			throw new Error(
-				'The verification penalty was not applied.'
-			);
+			throw new Error('The verification penalty was not applied.');
 		}
 
 		await this.recordPenalty(input, decision);
@@ -77,21 +63,14 @@ class VerificationRateLimitService {
 	 * @param decision - Redis rate-limit decision.
 	 * @throws {AuthError} When the decision is blocked.
 	 */
-	private readonly assertAllowed = async (
-		input: EmailVerificationRateLimitInput,
-		decision: EmailVerificationRateLimitDecision
-	): Promise<void> => {
+	private readonly assertAllowed = async (input: EmailVerificationRateLimitInput, decision: EmailVerificationRateLimitDecision): Promise<void> => {
 		if (decision.allowed) {
 			return;
 		}
 
 		await this.recordPenalty(input, decision);
 
-		throw new AuthError(
-			'verification_rate_limited',
-			'Verification email delivery is temporarily limited.',
-			Math.ceil(decision.retryAfterMs / 1_000)
-		);
+		throw new AuthError('verification_rate_limited', 'Verification email delivery is temporarily limited.', Math.ceil(decision.retryAfterMs / 1_000));
 	};
 
 	/** Records a newly applied progressive penalty once. */

@@ -15,9 +15,7 @@ const BEARER_AUTHORIZATION_PATTERN = /^Bearer\s+([^\s]+)$/iu;
  * @returns The verified Firebase user identifier.
  * @throws {AuthHttpError} When the authorization header is invalid.
  */
-const resolveMobileRequestUserId = async (
-	request: NextRequest
-): Promise<string> => {
+const resolveMobileRequestUserId = async (request: NextRequest): Promise<string> => {
 	const authorization = request.headers.get('authorization');
 	const match = authorization
 		? BEARER_AUTHORIZATION_PATTERN.exec(authorization.trim())
@@ -25,20 +23,14 @@ const resolveMobileRequestUserId = async (
 
 	const idToken = match?.[1];
 
-	if (
-		!idToken ||
-		idToken.length > MAXIMUM_FIREBASE_ID_TOKEN_LENGTH
-	) {
+	if (!idToken || idToken.length > MAXIMUM_FIREBASE_ID_TOKEN_LENGTH) {
 		throw new AuthHttpError(401, 'identity_invalid');
 	}
 
 	let decodedToken: DecodedIdToken;
 
 	try {
-		decodedToken = await firebaseAdmin.auth.verifyIdToken(
-			idToken,
-			true
-		);
+		decodedToken = await firebaseAdmin.auth.verifyIdToken(idToken, true);
 	} catch (error: unknown) {
 		throw toFirebaseAuthError(error, 'identity');
 	}

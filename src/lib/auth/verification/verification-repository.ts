@@ -40,9 +40,7 @@ import type {
  * @returns The normalized unknown value.
  * @throws {SyntaxError} When a serialized value contains invalid JSON.
  */
-const parseJson = (
-	value: unknown
-): unknown => {
+const parseJson = (value: unknown): unknown => {
 	if (typeof value === 'string') {
 		return JSON.parse(value);
 	}
@@ -55,9 +53,7 @@ const parseJson = (
  * @param value - Value to inspect.
  * @returns Whether the value is a string-keyed record.
  */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
@@ -70,9 +66,7 @@ const isRecord = (
  * @param value - Value to inspect.
  * @returns Whether the value is a supported verification mode.
  */
-const isDeviceVerificationMode = (
-	value: unknown
-): value is DeviceVerificationMode => {
+const isDeviceVerificationMode = (value: unknown): value is DeviceVerificationMode => {
 	return (
 		value === 'email_code' ||
 		value === 'mobile_approval'
@@ -84,9 +78,7 @@ const isDeviceVerificationMode = (
  * @param value - Value to inspect.
  * @returns Whether the value is a supported verification status.
  */
-const isDeviceVerificationStatus = (
-	value: unknown
-): value is DeviceVerificationStatus => {
+const isDeviceVerificationStatus = (value: unknown): value is DeviceVerificationStatus => {
 	return (
 		value === 'pending' ||
 		value === 'approved' ||
@@ -101,9 +93,7 @@ const isDeviceVerificationStatus = (
  * @param value - Value to inspect.
  * @returns Whether the value is a string or null.
  */
-const isNullableString = (
-	value: unknown
-): value is string | null => {
+const isNullableString = (value: unknown): value is string | null => {
 	return (
 		value === null ||
 		typeof value === 'string'
@@ -116,15 +106,11 @@ const isNullableString = (
  * @returns The parsed JavaScript date.
  * @throws {TypeError} When the date is invalid.
  */
-const parseDate = (
-	value: string
-): Date => {
+const parseDate = (value: string): Date => {
 	const date = new Date(value);
 
 	if (Number.isNaN(date.getTime())) {
-		throw new TypeError(
-			'The stored device verification date is invalid.'
-		);
+		throw new TypeError('The stored device verification date is invalid.');
 	}
 
 	return date;
@@ -136,13 +122,9 @@ const parseDate = (
  * @returns The validated stored verification.
  * @throws {TypeError} When the value is invalid.
  */
-const parseStoredVerification = (
-	value: unknown
-): StoredDeviceVerification => {
+const parseStoredVerification = (value: unknown): StoredDeviceVerification => {
 	if (!isRecord(value)) {
-		throw new TypeError(
-			'The stored device verification is invalid.'
-		);
+		throw new TypeError('The stored device verification is invalid.');
 	}
 
 	const {
@@ -167,8 +149,7 @@ const parseStoredVerification = (
 		consumedAt = null
 	} = value;
 
-	if (
-		typeof id !== 'string' ||
+	if (typeof id !== 'string' ||
 		!id ||
 		typeof userId !== 'string' ||
 		!userId ||
@@ -197,81 +178,28 @@ const parseStoredVerification = (
 		!isNullableString(emailLastSentAt) ||
 		!isNullableString(rejectedAt) ||
 		!isNullableString(finalizingAt) ||
-		!isNullableString(consumedAt)
-	) {
-		throw new TypeError(
-			'The stored device verification is invalid.'
-		);
+		!isNullableString(consumedAt)) {
+		throw new TypeError('The stored device verification is invalid.');
 	}
 
-	if (
-		status === 'pending' &&
-		(
-			approvedAt !== null ||
-			rejectedAt !== null ||
-			finalizingAt !== null ||
-			consumedAt !== null
-		)
-	) {
-		throw new TypeError(
-			'The stored pending verification state is inconsistent.'
-		);
+	if (status === 'pending' && (approvedAt !== null || rejectedAt !== null || finalizingAt !== null || consumedAt !== null)) {
+		throw new TypeError('The stored pending verification state is inconsistent.');
 	}
 
-	if (
-		status === 'approved' &&
-		(
-			approvedAt === null ||
-			rejectedAt !== null ||
-			finalizingAt !== null ||
-			consumedAt !== null
-		)
-	) {
-		throw new TypeError(
-			'The stored approved verification state is inconsistent.'
-		);
+	if (status === 'approved' && (approvedAt === null || rejectedAt !== null || finalizingAt !== null || consumedAt !== null)) {
+		throw new TypeError('The stored approved verification state is inconsistent.');
 	}
 
-	if (
-		status === 'rejected' &&
-		(
-			approvedAt !== null ||
-			rejectedAt === null ||
-			finalizingAt !== null ||
-			consumedAt !== null
-		)
-	) {
-		throw new TypeError(
-			'The stored rejected verification state is inconsistent.'
-		);
+	if (status === 'rejected' && (approvedAt !== null || rejectedAt === null || finalizingAt !== null || consumedAt !== null)) {
+		throw new TypeError('The stored rejected verification state is inconsistent.');
 	}
 
-	if (
-		status === 'finalizing' &&
-		(
-			approvedAt === null ||
-			rejectedAt !== null ||
-			finalizingAt === null ||
-			consumedAt !== null
-		)
-	) {
-		throw new TypeError(
-			'The stored finalizing verification state is inconsistent.'
-		);
+	if (status === 'finalizing' && (approvedAt === null || rejectedAt !== null || finalizingAt === null || consumedAt !== null)) {
+		throw new TypeError('The stored finalizing verification state is inconsistent.');
 	}
 
-	if (
-		status === 'consumed' &&
-		(
-			approvedAt === null ||
-			rejectedAt !== null ||
-			finalizingAt === null ||
-			consumedAt === null
-		)
-	) {
-		throw new TypeError(
-			'The stored consumed verification state is inconsistent.'
-		);
+	if (status === 'consumed' && (approvedAt === null || rejectedAt !== null || finalizingAt === null || consumedAt === null)) {
+		throw new TypeError('The stored consumed verification state is inconsistent.');
 	}
 
 	return {
@@ -302,28 +230,16 @@ const parseStoredVerification = (
  * @param stored - Stored Redis verification.
  * @returns The domain verification.
  */
-const fromStored = (
-	stored: StoredDeviceVerification
-): DeviceVerification => {
+const fromStored = (stored: StoredDeviceVerification): DeviceVerification => {
 	return {
 		...stored,
 		createdAt: parseDate(stored.createdAt),
 		expiresAt: parseDate(stored.expiresAt),
-		emailLastSentAt: stored.emailLastSentAt
-			? parseDate(stored.emailLastSentAt)
-			: null,
-		approvedAt: stored.approvedAt
-			? parseDate(stored.approvedAt)
-			: null,
-		rejectedAt: stored.rejectedAt
-			? parseDate(stored.rejectedAt)
-			: null,
-		finalizingAt: stored.finalizingAt
-			? parseDate(stored.finalizingAt)
-			: null,
-		consumedAt: stored.consumedAt
-			? parseDate(stored.consumedAt)
-			: null
+		emailLastSentAt: stored.emailLastSentAt ? parseDate(stored.emailLastSentAt): null,
+		approvedAt: stored.approvedAt ? parseDate(stored.approvedAt): null,
+		rejectedAt: stored.rejectedAt ? parseDate(stored.rejectedAt): null,
+		finalizingAt: stored.finalizingAt ? parseDate(stored.finalizingAt): null,
+		consumedAt: stored.consumedAt ? parseDate(stored.consumedAt): null
 	};
 };
 
@@ -332,19 +248,15 @@ const fromStored = (
  * @param verification - Domain verification.
  * @returns The serializable Redis representation.
  */
-const toStored = (
-	verification: DeviceVerification
-): StoredDeviceVerification => {
+const toStored = (verification: DeviceVerification): StoredDeviceVerification => {
 	return {
 		...verification,
 		createdAt: verification.createdAt.toISOString(),
 		expiresAt: verification.expiresAt.toISOString(),
-		emailLastSentAt:
-			verification.emailLastSentAt?.toISOString() ?? null,
+		emailLastSentAt: verification.emailLastSentAt?.toISOString() ?? null,
 		approvedAt: verification.approvedAt?.toISOString() ?? null,
 		rejectedAt: verification.rejectedAt?.toISOString() ?? null,
-		finalizingAt:
-			verification.finalizingAt?.toISOString() ?? null,
+		finalizingAt: verification.finalizingAt?.toISOString() ?? null,
 		consumedAt: verification.consumedAt?.toISOString() ?? null
 	};
 };
@@ -354,14 +266,8 @@ const toStored = (
  * @param value - Serialized or automatically deserialized verification.
  * @returns The validated domain verification.
  */
-const parseVerification = (
-	value: unknown
-): DeviceVerification => {
-	return fromStored(
-		parseStoredVerification(
-			parseJson(value)
-		)
-	);
+const parseVerification = (value: unknown): DeviceVerification => {
+	return fromStored(parseStoredVerification(parseJson(value)));
 };
 
 /**
@@ -369,13 +275,9 @@ const parseVerification = (
  * @param value - Raw key component.
  * @returns The encoded key component.
  */
-const encodeKeyPart = (
-	value: string
-): string => {
+const encodeKeyPart = (value: string): string => {
 	if (!value) {
-		throw new TypeError(
-			'The Redis key component is required.'
-		);
+		throw new TypeError('The Redis key component is required.');
 	}
 
 	return encodeURIComponent(value);
@@ -386,21 +288,14 @@ const encodeKeyPart = (
  * @param redis - Initialized Upstash Redis client.
  * @returns The device verification repository.
  */
-const createDeviceVerificationRepository = (
-	redis: Redis
-): DeviceVerificationRepository => {
-	const getAccountPrefix = (
-		userId: string
-	): string => {
+const createDeviceVerificationRepository = (redis: Redis): DeviceVerificationRepository => {
+	const getAccountPrefix = (userId: string): string => {
 		const encodedUserId = encodeKeyPart(userId);
 
 		return `account:{${ encodedUserId }}`;
 	};
 
-	const getVerificationKey = (
-		userId: string,
-		verificationId: string
-	): string => {
+	const getVerificationKey = (userId: string, verificationId: string): string => {
 		return [
 			getAccountPrefix(userId),
 			'device-verifications',
@@ -408,10 +303,7 @@ const createDeviceVerificationRepository = (
 		].join(':');
 	};
 
-	const getApprovalKey = (
-		userId: string,
-		approvalTokenHash: string
-	): string => {
+	const getApprovalKey = (userId: string, approvalTokenHash: string): string => {
 		return [
 			getAccountPrefix(userId),
 			'device-verification-approvals',
@@ -419,10 +311,7 @@ const createDeviceVerificationRepository = (
 		].join(':');
 	};
 
-	const getEmailResendBackupKey = (
-		userId: string,
-		verificationId: string
-	): string => {
+	const getEmailResendBackupKey = (userId: string, verificationId: string): string => {
 		return [
 			getAccountPrefix(userId),
 			'device-verification-email-resends',
@@ -438,21 +327,13 @@ const createDeviceVerificationRepository = (
 			);
 
 			if (lifetimeMs <= 0) {
-				throw new RangeError(
-					'Cannot persist an expired device verification.'
-				);
+				throw new RangeError('Cannot persist an expired device verification.');
 			}
 
-			const verificationKey = getVerificationKey(
-				verification.userId,
-				verification.id
-			);
+			const verificationKey = getVerificationKey(verification.userId, verification.id);
 
 			const approvalKey = verification.approvalTokenHash
-				? getApprovalKey(
-					verification.userId,
-					verification.approvalTokenHash
-				)
+				? getApprovalKey(verification.userId, verification.approvalTokenHash)
 				: verificationKey;
 
 			const result = await redis.eval<string[], number>(
@@ -470,24 +351,17 @@ const createDeviceVerificationRepository = (
 			);
 
 			if (result !== 1) {
-				throw new Error(
-					'This device verification already exists.'
-				);
+				throw new Error('This device verification already exists.');
 			}
 
 			return verification;
 		},
 
-		attemptEmailCode: async (
-			input: EmailCodeAttemptInput
-		): Promise<EmailCodeAttemptResult> => {
+		attemptEmailCode: async (input: EmailCodeAttemptInput): Promise<EmailCodeAttemptResult> => {
 			const result = await redis.eval<string[], unknown>(
 				attemptEmailCodeScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -501,80 +375,49 @@ const createDeviceVerificationRepository = (
 			const parsedResult = parseJson(result);
 
 			if (!isRecord(parsedResult)) {
-				throw new TypeError(
-					'The email verification result is invalid.'
-				);
+				throw new TypeError('The email verification result is invalid.');
 			}
 
-			if (
-				parsedResult.outcome === 'approved'
-			) {
+			if (parsedResult.outcome === 'approved') {
 				return {
 					outcome: 'approved',
-					verification: fromStored(
-						parseStoredVerification(
-							parsedResult.verification
-						)
-					)
+					verification: fromStored(parseStoredVerification(parsedResult.verification))
 				};
 			}
 
-			if (
-				parsedResult.outcome === 'invalid' &&
-				typeof parsedResult.remainingAttempts === 'number'
-			) {
+			if (parsedResult.outcome === 'invalid' && typeof parsedResult.remainingAttempts === 'number') {
 				return {
 					outcome: 'invalid',
-					remainingAttempts:
-					parsedResult.remainingAttempts
+					remainingAttempts: parsedResult.remainingAttempts
 				};
 			}
 
-			if (
-				parsedResult.outcome === 'locked' &&
-				typeof parsedResult.newlyLocked === 'boolean'
-			) {
+			if (parsedResult.outcome === 'locked' && typeof parsedResult.newlyLocked === 'boolean') {
 				return {
 					outcome: 'locked',
 					newlyLocked: parsedResult.newlyLocked
 				};
 			}
 
-			if (
-				parsedResult.outcome === 'not_found' ||
-				parsedResult.outcome === 'expired'
-			) {
+			if (parsedResult.outcome === 'not_found' || parsedResult.outcome === 'expired') {
 				return {
 					outcome: parsedResult.outcome
 				};
 			}
 
-			throw new TypeError(
-				'The email verification result is invalid.'
-			);
+			throw new TypeError('The email verification result is invalid.');
 		},
 
-		resendEmailCode: async (
-			input: ResendEmailCodeInput
-		): Promise<ResendEmailCodeResult> => {
-			const cooldownBoundaryAt = new Date(
-				input.sentAt.getTime() - input.cooldownMs
-			);
+		resendEmailCode: async (input: ResendEmailCodeInput): Promise<ResendEmailCodeResult> => {
+			const cooldownBoundaryAt = new Date(input.sentAt.getTime() - input.cooldownMs);
 
-			const lifetimeMs =
-				input.expiresAt.getTime() - input.sentAt.getTime();
+			const lifetimeMs = input.expiresAt.getTime() - input.sentAt.getTime();
 
 			const result = await redis.eval<string[], unknown>(
 				resendEmailCodeScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					),
-					getEmailResendBackupKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId),
+					getEmailResendBackupKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -594,56 +437,36 @@ const createDeviceVerificationRepository = (
 			const parsedResult = parseJson(result);
 
 			if (!isRecord(parsedResult)) {
-				throw new TypeError(
-					'The email verification resend result is invalid.'
-				);
+				throw new TypeError('The email verification resend result is invalid.');
 			}
 
 			if (parsedResult.outcome === 'resent') {
 				return {
 					outcome: 'resent',
-					verification: fromStored(
-						parseStoredVerification(
-							parsedResult.verification
-						)
-					)
+					verification: fromStored(parseStoredVerification(parsedResult.verification))
 				};
 			}
 
-			if (
-				parsedResult.outcome === 'cooldown' &&
-				typeof parsedResult.retryAfterMs === 'number'
-			) {
+			if (parsedResult.outcome === 'cooldown' && typeof parsedResult.retryAfterMs === 'number') {
 				return {
 					outcome: 'cooldown',
 					retryAfterMs: parsedResult.retryAfterMs
 				};
 			}
 
-			if (
-				parsedResult.outcome === 'limit_reached' ||
-				parsedResult.outcome === 'not_found'
-			) {
+			if (parsedResult.outcome === 'limit_reached' || parsedResult.outcome === 'not_found') {
 				return { outcome: parsedResult.outcome };
 			}
 
-			throw new TypeError(
-				'The email verification resend result is invalid.'
-			);
+			throw new TypeError('The email verification resend result is invalid.');
 		},
 
 		completeEmailCodeResend: async (input) => {
 			const result = await redis.eval<string[], number>(
 				completeEmailCodeResendScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					),
-					getEmailResendBackupKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId),
+					getEmailResendBackupKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -661,14 +484,8 @@ const createDeviceVerificationRepository = (
 			const result = await redis.eval<string[], number>(
 				rollbackEmailCodeResendScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					),
-					getEmailResendBackupKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId),
+					getEmailResendBackupKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -682,16 +499,11 @@ const createDeviceVerificationRepository = (
 			return result === 1;
 		},
 
-		cancelEmail: async (
-			input: CancelEmailVerificationRepositoryInput
-		): Promise<boolean> => {
+		cancelEmail: async (input: CancelEmailVerificationRepositoryInput): Promise<boolean> => {
 			const result = await redis.eval<string[], number>(
 				cancelEmailVerificationScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -704,20 +516,12 @@ const createDeviceVerificationRepository = (
 			return result === 1;
 		},
 
-		approveMobile: async (
-			input: MobileApprovalInput
-		): Promise<DeviceVerification | null> => {
+		approveMobile: async (input: MobileApprovalInput): Promise<DeviceVerification | null> => {
 			const result = await redis.eval<string[], unknown>(
 				approveMobileScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					),
-					getApprovalKey(
-						input.userId,
-						input.approvalTokenHash
-					)
+					getVerificationKey(input.userId, input.verificationId),
+					getApprovalKey(input.userId, input.approvalTokenHash)
 				],
 				[
 					input.verificationId,
@@ -735,16 +539,11 @@ const createDeviceVerificationRepository = (
 			return parseVerification(result);
 		},
 
-		resolveMobileApproval: async (
-			input: ResolveMobileApprovalInput
-		): Promise<DeviceVerification | null> => {
+		resolveMobileApproval: async (input: ResolveMobileApprovalInput): Promise<DeviceVerification | null> => {
 			const result = await redis.eval<string[], unknown>(
 				resolveMobileApprovalScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -760,16 +559,11 @@ const createDeviceVerificationRepository = (
 			return parseVerification(result);
 		},
 
-		resolveBrowserMobileVerification: async (
-			input: ResolveBrowserMobileVerificationInput
-		): Promise<DeviceVerification | null> => {
+		resolveBrowserMobileVerification: async (input: ResolveBrowserMobileVerificationInput): Promise<DeviceVerification | null> => {
 			const result = await redis.eval<string[], unknown>(
 				resolveBrowserMobileVerificationScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -787,20 +581,12 @@ const createDeviceVerificationRepository = (
 			return parseVerification(result);
 		},
 
-		rejectMobile: async (
-			input: RejectMobileApprovalInput
-		): Promise<DeviceVerification | null> => {
+		rejectMobile: async (input: RejectMobileApprovalInput): Promise<DeviceVerification | null> => {
 			const result = await redis.eval<string[], unknown>(
 				rejectMobileScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					),
-					getApprovalKey(
-						input.userId,
-						input.approvalTokenHash
-					)
+					getVerificationKey(input.userId, input.verificationId),
+					getApprovalKey(input.userId, input.approvalTokenHash)
 				],
 				[
 					input.verificationId,
@@ -817,16 +603,11 @@ const createDeviceVerificationRepository = (
 			return parseVerification(result);
 		},
 
-		beginFinalization: async (
-			input: BeginDeviceVerificationFinalizationInput
-		): Promise<DeviceVerification | null> => {
+		beginFinalization: async (input: BeginDeviceVerificationFinalizationInput): Promise<DeviceVerification | null> => {
 			const result = await redis.eval<string[], unknown>(
 				beginFinalizationScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,
@@ -845,16 +626,11 @@ const createDeviceVerificationRepository = (
 			return parseVerification(result);
 		},
 
-		completeFinalization: async (
-			input: CompleteDeviceVerificationFinalizationInput
-		): Promise<DeviceVerification | null> => {
+		completeFinalization: async (input: CompleteDeviceVerificationFinalizationInput): Promise<DeviceVerification | null> => {
 			const result = await redis.eval<string[], unknown>(
 				completeFinalizationScript,
 				[
-					getVerificationKey(
-						input.userId,
-						input.verificationId
-					)
+					getVerificationKey(input.userId, input.verificationId)
 				],
 				[
 					input.userId,

@@ -1,15 +1,7 @@
 import 'server-only';
 
-import type {
-	Message,
-	Messaging,
-	SendResponse
-} from 'firebase-admin/messaging';
-import type {
-	FirebaseCloudMessagingBatchResult,
-	FirebaseCloudMessagingMessage,
-	FirebaseCloudMessagingResult
-} from '@/types/firebase';
+import type { Message, Messaging, SendResponse } from 'firebase-admin/messaging';
+import type { FirebaseCloudMessagingBatchResult, FirebaseCloudMessagingMessage, FirebaseCloudMessagingResult } from '@/types/firebase';
 
 const MAX_MESSAGES_PER_BATCH = 500;
 
@@ -26,9 +18,7 @@ class FirebaseCloudMessagingService {
 	 * Creates a Firebase Cloud Messaging service.
 	 * @param messaging - Initialized Firebase Admin Messaging client.
 	 */
-	constructor(
-		private readonly messaging: Messaging
-	) {}
+	constructor(private readonly messaging: Messaging) {}
 
 	/**
 	 * Sends messages while respecting the Firebase batch size limit.
@@ -36,9 +26,7 @@ class FirebaseCloudMessagingService {
 	 * @returns Ordered delivery results without registration tokens.
 	 * @throws When Firebase rejects a complete batch request.
 	 */
-	readonly sendEach = async (
-		messages: readonly FirebaseCloudMessagingMessage[]
-	): Promise<FirebaseCloudMessagingBatchResult> => {
+	readonly sendEach = async (messages: readonly FirebaseCloudMessagingMessage[]): Promise<FirebaseCloudMessagingBatchResult> => {
 		if (messages.length === 0) {
 			return {
 				successCount: 0,
@@ -52,27 +40,18 @@ class FirebaseCloudMessagingService {
 		const messageChunks = this.chunkMessages(messages);
 		const chunkResults = await Promise.all(
 			messageChunks.map(async (messageChunk) => {
-				const firebaseMessages = messageChunk.map(
-					this.toFirebaseMessage
-				);
+				const firebaseMessages = messageChunk.map(this.toFirebaseMessage);
 
-				const response = await this.messaging.sendEach(
-					firebaseMessages
-				);
+				const response = await this.messaging.sendEach(firebaseMessages);
 
 				return response.responses.map((sendResponse, index) => {
 					const message = messageChunk[index];
 
 					if (!message) {
-						throw new TypeError(
-							'The Firebase messaging response is inconsistent.'
-						);
+						throw new TypeError('The Firebase messaging response is inconsistent.');
 					}
 
-					return this.toDeliveryResult(
-						message.recipientId,
-						sendResponse
-					);
+					return this.toDeliveryResult(message.recipientId, sendResponse);
 				});
 			})
 		);
@@ -94,9 +73,7 @@ class FirebaseCloudMessagingService {
 	 * @param message - Validated internal delivery request.
 	 * @returns The Firebase Admin message payload.
 	 */
-	private readonly toFirebaseMessage = (
-		message: FirebaseCloudMessagingMessage
-	): Message => {
+	private readonly toFirebaseMessage = (message: FirebaseCloudMessagingMessage): Message => {
 		return {
 			token: message.token.trim(),
 			...(message.notification
@@ -119,10 +96,7 @@ class FirebaseCloudMessagingService {
 	 * @param response - Firebase response for the matching message.
 	 * @returns The normalized delivery result.
 	 */
-	private readonly toDeliveryResult = (
-		recipientId: string,
-		response: SendResponse
-	): FirebaseCloudMessagingResult => {
+	private readonly toDeliveryResult = (recipientId: string, response: SendResponse): FirebaseCloudMessagingResult => {
 		if (response.success && response.messageId) {
 			return {
 				recipientId,
@@ -136,9 +110,7 @@ class FirebaseCloudMessagingService {
 			recipientId,
 			status: 'failed',
 			errorCode,
-			isInvalidToken:
-				errorCode !== null &&
-				INVALID_TOKEN_ERROR_CODES.has(errorCode)
+			isInvalidToken: errorCode !== null && INVALID_TOKEN_ERROR_CODES.has(errorCode)
 		};
 	};
 
@@ -147,9 +119,7 @@ class FirebaseCloudMessagingService {
 	 * @param messages - Validated delivery requests.
 	 * @returns Ordered message batches containing at most 500 entries.
 	 */
-	private readonly chunkMessages = (
-		messages: readonly FirebaseCloudMessagingMessage[]
-	): readonly (readonly FirebaseCloudMessagingMessage[])[] => {
+	private readonly chunkMessages = (messages: readonly FirebaseCloudMessagingMessage[]): readonly (readonly FirebaseCloudMessagingMessage[])[] => {
 		const messageChunks: FirebaseCloudMessagingMessage[][] = [];
 
 		for (
@@ -157,9 +127,7 @@ class FirebaseCloudMessagingService {
 			index < messages.length;
 			index += MAX_MESSAGES_PER_BATCH
 		) {
-			messageChunks.push(
-				messages.slice(index, index + MAX_MESSAGES_PER_BATCH)
-			);
+			messageChunks.push(messages.slice(index, index + MAX_MESSAGES_PER_BATCH));
 		}
 
 		return messageChunks;
@@ -170,37 +138,21 @@ class FirebaseCloudMessagingService {
 	 * @param message - Delivery request to validate.
 	 * @throws {TypeError} When the recipient, token, or payload is invalid.
 	 */
-	private readonly assertMessage = (
-		message: FirebaseCloudMessagingMessage
-	): void => {
+	private readonly assertMessage = (message: FirebaseCloudMessagingMessage): void => {
 		if (!message.recipientId.trim()) {
-			throw new TypeError(
-				'The Firebase messaging recipient identifier is required.'
-			);
+			throw new TypeError('The Firebase messaging recipient identifier is required.');
 		}
 
 		if (!message.token.trim()) {
-			throw new TypeError(
-				'The Firebase messaging registration token is required.'
-			);
+			throw new TypeError('The Firebase messaging registration token is required.');
 		}
 
-		if (
-			message.notification &&
-			(
-				!message.notification.title.trim() ||
-				!message.notification.body.trim()
-			)
-		) {
-			throw new TypeError(
-				'The Firebase messaging notification is invalid.'
-			);
+		if (message.notification && (!message.notification.title.trim() || !message.notification.body.trim())) {
+			throw new TypeError('The Firebase messaging notification is invalid.');
 		}
 
 		if (!message.notification && !message.data) {
-			throw new TypeError(
-				'The Firebase messaging payload is required.'
-			);
+			throw new TypeError('The Firebase messaging payload is required.');
 		}
 	};
 }

@@ -1,15 +1,8 @@
 import 'server-only';
 
 import type { FirestoreRepository } from '@assosync/firestore';
-import type {
-	AuthenticatorTransport,
-	CredentialDeviceType
-} from '@simplewebauthn/server';
-import type {
-	Passkey,
-	PasskeyRepository,
-	StoredPasskey
-} from '@/types/passkey';
+import type { AuthenticatorTransport, CredentialDeviceType } from '@simplewebauthn/server';
+import type { Passkey, PasskeyRepository, StoredPasskey } from '@/types/passkey';
 
 const ACCOUNT_COLLECTION = 'account';
 const PASSKEY_COLLECTION = 'passkeys';
@@ -30,9 +23,7 @@ const isDeviceType = (value: unknown): value is CredentialDeviceType => {
 	return value === 'singleDevice' || value === 'multiDevice';
 };
 
-const isTransport = (
-	value: unknown
-): value is AuthenticatorTransport => {
+const isTransport = (value: unknown): value is AuthenticatorTransport => {
 	return (
 		value === 'ble' ||
 		value === 'hybrid' ||
@@ -47,13 +38,10 @@ const toPasskey = (value: unknown): Passkey => {
 		throw new TypeError('The stored passkey is invalid.');
 	}
 
-	const record: Record<string, unknown> = Object.fromEntries(
-		Object.entries(value)
-	);
+	const record: Record<string, unknown> = Object.fromEntries(Object.entries(value));
 	const transports = record.transports;
 
-	if (
-		typeof record.uid !== 'string' ||
+	if (typeof record.uid !== 'string' ||
 		typeof record.userId !== 'string' ||
 		typeof record.credentialId !== 'string' ||
 		typeof record.publicKey !== 'string' ||
@@ -68,8 +56,7 @@ const toPasskey = (value: unknown): Passkey => {
 			typeof record.displayName !== 'string') ||
 		(record.lastUsed !== null && !isDate(record.lastUsed)) ||
 		!isDate(record.created) ||
-		!isDate(record.updated)
-	) {
+		!isDate(record.updated)) {
 		throw new TypeError('The stored passkey is invalid.');
 	}
 
@@ -94,9 +81,7 @@ const toPasskey = (value: unknown): Passkey => {
  * @param firestore - Shared Firestore repository.
  * @returns Passkey persistence contract.
  */
-const createPasskeyRepository = (
-	firestore: FirestoreRepository
-): PasskeyRepository => {
+const createPasskeyRepository = (firestore: FirestoreRepository): PasskeyRepository => {
 	return {
 		create: async (passkey) => {
 			const stored = await firestore.create<StoredPasskey>(
@@ -141,32 +126,18 @@ const createPasskeyRepository = (
 			return toPasskey(result.rows[0]);
 		},
 		findById: async (userId, passkeyId) => {
-			const stored = await firestore.get<StoredPasskey>(
-				`${getCollectionPath(userId)}/${passkeyId}`
-			);
+			const stored = await firestore.get<StoredPasskey>(`${getCollectionPath(userId)}/${passkeyId}`);
 
 			return stored ? toPasskey(stored) : null;
 		},
-		updateDisplayName: async (
-			userId,
-			passkeyId,
-			displayName
-		) => {
-			await firestore.update<StoredPasskey>(
-				`${getCollectionPath(userId)}/${passkeyId}`,
-				{ displayName }
-			);
+		updateDisplayName: async (userId, passkeyId, displayName) => {
+			await firestore.update<StoredPasskey>(`${getCollectionPath(userId)}/${passkeyId}`, { displayName });
 		},
 		updateCounter: async (userId, passkeyId, counter, lastUsedAt) => {
-			await firestore.update<StoredPasskey>(
-				`${getCollectionPath(userId)}/${passkeyId}`,
-				{ counter, lastUsed: lastUsedAt }
-			);
+			await firestore.update<StoredPasskey>(`${getCollectionPath(userId)}/${passkeyId}`, { counter, lastUsed: lastUsedAt });
 		},
 		delete: async (userId, passkeyId) => {
-			await firestore.delete(
-				`${getCollectionPath(userId)}/${passkeyId}`
-			);
+			await firestore.delete(`${getCollectionPath(userId)}/${passkeyId}`);
 		}
 	};
 };

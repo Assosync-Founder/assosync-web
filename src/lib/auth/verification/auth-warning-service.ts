@@ -1,9 +1,6 @@
 import 'server-only';
 
-import {
-	AuthWarningEmail,
-	MailError
-} from '@assosync/email';
+import { AuthWarningEmail, MailError } from '@assosync/email';
 import { createElement } from 'react';
 import DeviceService from '@/lib/auth/device/device-service';
 import { logAuthServerError } from '@/lib/auth/shared/auth-logger';
@@ -31,9 +28,7 @@ const occurrenceFormatter = new Intl.DateTimeFormat(
  * @param device - Persisted browser device information.
  * @returns A human-readable device label or null.
  */
-const createDeviceName = (
-	device: Device
-): string | null => {
+const createDeviceName = (device: Device): string | null => {
 	if (device.deviceModel) {
 		return device.deviceModel;
 	}
@@ -62,13 +57,8 @@ const createDeviceName = (
  * @param device - Persisted browser device information.
  * @returns A human-readable browser description or null.
  */
-const createBrowserName = (
-	device: Device
-): string | null => {
-	if (
-		device.browserName &&
-		device.operatingSystemName
-	) {
+const createBrowserName = (device: Device): string | null => {
+	if (device.browserName && device.operatingSystemName) {
 		return [
 			device.browserName,
 			'sur',
@@ -95,12 +85,7 @@ class AuthWarningService implements AuthWarningNotifier {
 	 * @param options - Security warning email configuration.
 	 * @throws {MailError} When the configuration is invalid.
 	 */
-	constructor(
-		private readonly emails: VerificationEmailSender,
-		private readonly identities: AuthWarningIdentityProvider,
-		private readonly devices: DeviceService,
-		private readonly options: AuthWarningEmailServiceOptions
-	) {
+	constructor(private readonly emails: VerificationEmailSender, private readonly identities: AuthWarningIdentityProvider, private readonly devices: DeviceService, private readonly options: AuthWarningEmailServiceOptions) {
 		this.brands = new Map(
 			options.brands.map((brand) => {
 				return [
@@ -110,26 +95,14 @@ class AuthWarningService implements AuthWarningNotifier {
 			})
 		);
 
-		if (
-			this.brands.size === 0 ||
-			this.brands.size !== options.brands.length
-		) {
-			throw new MailError(
-				'config_invalid',
-				'Authentication warning email brands must be non-empty and unique.'
-			);
+		if (this.brands.size === 0 || this.brands.size !== options.brands.length) {
+			throw new MailError('config_invalid', 'Authentication warning email brands must be non-empty and unique.');
 		}
 
 		const securityUrl = new URL(options.securityUrl);
 
-		if (
-			securityUrl.protocol !== 'https:' &&
-			securityUrl.hostname !== 'account.localhost'
-		) {
-			throw new MailError(
-				'config_invalid',
-				'The authentication warning security URL must be trusted.'
-			);
+		if (securityUrl.protocol !== 'https:' && securityUrl.hostname !== 'account.localhost') {
+			throw new MailError('config_invalid', 'The authentication warning security URL must be trusted.');
 		}
 	}
 
@@ -139,16 +112,11 @@ class AuthWarningService implements AuthWarningNotifier {
 	 * @param input - Safe authentication warning context.
 	 * @returns A promise resolved after the delivery attempt.
 	 */
-	readonly notify = async (
-		input: SendAuthWarningInput
-	): Promise<void> => {
+	readonly notify = async (input: SendAuthWarningInput): Promise<void> => {
 		try {
 			await this.send(input);
 		} catch (error: unknown) {
-			logAuthServerError(
-				error,
-				'auth_warning_email_delivery'
-			);
+			logAuthServerError(error, 'auth_warning_email_delivery');
 		}
 	};
 
@@ -157,24 +125,16 @@ class AuthWarningService implements AuthWarningNotifier {
 	 * @param input - Safe authentication warning context.
 	 * @returns A promise resolved after provider acceptance.
 	 */
-	private readonly send = async (
-		input: SendAuthWarningInput
-	): Promise<void> => {
+	private readonly send = async (input: SendAuthWarningInput): Promise<void> => {
 		const brand = this.brands.get(input.applicationId);
 
 		if (!brand) {
-			throw new MailError(
-				'input_invalid',
-				'The authentication warning application is invalid.'
-			);
+			throw new MailError('input_invalid', 'The authentication warning application is invalid.');
 		}
 
 		const [identity, device] = await Promise.all([
 			this.identities.resolve(input.userId),
-			this.devices.findById(
-				input.userId,
-				input.deviceId
-			)
+			this.devices.findById(input.userId, input.deviceId)
 		]);
 
 		const email = createElement(
@@ -189,9 +149,7 @@ class AuthWarningService implements AuthWarningNotifier {
 				securityUrl: this.options.securityUrl,
 				details: {
 					applicationName: brand.displayName,
-					occurredAt: occurrenceFormatter.format(
-						input.occurredAt
-					),
+					occurredAt: occurrenceFormatter.format(input.occurredAt),
 					deviceName: createDeviceName(device),
 					browserName: createBrowserName(device),
 					location: null
@@ -208,8 +166,7 @@ class AuthWarningService implements AuthWarningNotifier {
 		await this.emails.send({
 			from: brand.from,
 			to: [identity.email],
-			subject:
-				`Activité de connexion inhabituelle sur ${brand.displayName}`,
+			subject: `Activité de connexion inhabituelle sur ${brand.displayName}`,
 			react: email,
 			...(brand.replyTo
 				? {

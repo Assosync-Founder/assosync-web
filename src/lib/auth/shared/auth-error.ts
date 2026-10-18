@@ -10,11 +10,7 @@ class AuthError extends Error {
 	 * @param message - Safe diagnostic message.
 	 * @param retryAfterSeconds - Optional client retry delay in seconds.
 	 */
-	constructor(
-		public readonly code: AuthErrorCode,
-		message: string,
-		public readonly retryAfterSeconds: number | null = null
-	) {
+	constructor(public readonly code: AuthErrorCode, message: string, public readonly retryAfterSeconds: number | null = null) {
 		super(message);
 
 		this.name = 'AuthError';

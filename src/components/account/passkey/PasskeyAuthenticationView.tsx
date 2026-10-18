@@ -3,11 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { startAuthentication } from '@simplewebauthn/browser';
 import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
-import {
-	inMemoryPersistence,
-	setPersistence,
-	signInWithCustomToken
-} from 'firebase/auth';
+import { inMemoryPersistence, setPersistence, signInWithCustomToken } from 'firebase/auth';
 import firebaseClient from '@/services/firebase/firebase-client';
 import type { PasskeyAuthenticationViewProps } from '@/types/passkey';
 
@@ -15,9 +11,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return typeof value === 'object' && value !== null;
 };
 
-const isAuthenticationOptions = (
-	value: unknown
-): value is PublicKeyCredentialRequestOptionsJSON => {
+const isAuthenticationOptions = (value: unknown): value is PublicKeyCredentialRequestOptionsJSON => {
 	return isRecord(value) && typeof value.challenge === 'string';
 };
 
@@ -43,26 +37,16 @@ const PasskeyAuthenticationView = ({
 
 		const authenticate = async (): Promise<void> => {
 			try {
-				const optionsResponse = await fetch(
-					`/api/auth/passkeys/options?authorization=${encodeURIComponent(authorizationId)}`,
-					{ cache: 'no-store' }
-				);
+				const optionsResponse = await fetch(`/api/auth/passkeys/options?authorization=${encodeURIComponent(authorizationId)}`, { cache: 'no-store' });
 				const issued: unknown = await optionsResponse.json();
 
-				if (
-					!optionsResponse.ok ||
-					!isRecord(issued) ||
-					typeof issued.challengeId !== 'string' ||
-					!isAuthenticationOptions(issued.options)
-				) {
+				if (!optionsResponse.ok || !isRecord(issued) || typeof issued.challengeId !== 'string' || !isAuthenticationOptions(issued.options)) {
 					window.location.replace(failureUri);
 
 					return;
 				}
 
-				const assertion = await startAuthentication({
-					optionsJSON: issued.options
-				});
+				const assertion = await startAuthentication({ optionsJSON: issued.options });
 				const verificationResponse = await fetch(
 					'/api/auth/passkeys/verify',
 					{
@@ -77,11 +61,7 @@ const PasskeyAuthenticationView = ({
 				);
 				const verification: unknown = await verificationResponse.json();
 
-				if (
-					!verificationResponse.ok ||
-					!isRecord(verification) ||
-					typeof verification.customToken !== 'string'
-				) {
+				if (!verificationResponse.ok || !isRecord(verification) || typeof verification.customToken !== 'string') {
 					window.location.replace(failureUri);
 
 					return;
@@ -89,10 +69,7 @@ const PasskeyAuthenticationView = ({
 
 				await setPersistence(firebaseClient.auth, inMemoryPersistence);
 
-				const credential = await signInWithCustomToken(
-					firebaseClient.auth,
-					verification.customToken
-				);
+				const credential = await signInWithCustomToken(firebaseClient.auth, verification.customToken);
 				const idToken = await credential.user.getIdToken(true);
 				const bindResponse = await fetch('/api/auth/passkeys/bind', {
 					method: 'POST',
@@ -101,11 +78,7 @@ const PasskeyAuthenticationView = ({
 				});
 				const binding: unknown = await bindResponse.json();
 
-				if (
-					!bindResponse.ok ||
-					!isRecord(binding) ||
-					typeof binding.continuationUrl !== 'string'
-				) {
+				if (!bindResponse.ok || !isRecord(binding) || typeof binding.continuationUrl !== 'string') {
 					window.location.replace(failureUri);
 
 					return;
@@ -113,8 +86,7 @@ const PasskeyAuthenticationView = ({
 
 				window.location.replace(binding.continuationUrl);
 			} catch (error: unknown) {
-				const redirectUri =
-					error instanceof Error &&
+				const redirectUri = error instanceof Error &&
 					error.name === 'NotAllowedError'
 						? cancellationUri
 						: failureUri;

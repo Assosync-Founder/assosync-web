@@ -1,17 +1,8 @@
 import { cookies } from 'next/headers';
-import {
-	NextRequest,
-	NextResponse
-} from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import authConfig from '@/config/auth';
-import {
-	clearSessionCookies
-} from '@/lib/auth/http/auth-cookies';
-import {
-	assertSameOrigin,
-	createAuthErrorResponse,
-	resolveApplicationId
-} from '@/lib/auth/http/auth-http';
+import { clearSessionCookies } from '@/lib/auth/http/auth-cookies';
+import { assertSameOrigin, createAuthErrorResponse, resolveApplicationId } from '@/lib/auth/http/auth-http';
 import AuthError from '@/lib/auth/shared/auth-error';
 import sessionService from '@/lib/auth/session/session-server';
 import type { Session } from '@/types/auth';
@@ -23,11 +14,7 @@ import type { Session } from '@/types/auth';
  * @param applicationId - Expected application identifier.
  * @returns The verified session, or null for an expected authentication failure.
  */
-const resolveCurrentSession = async (
-	firebaseSessionCookie: string,
-	sessionToken: string,
-	applicationId: string
-): Promise<Session | null> => {
+const resolveCurrentSession = async (firebaseSessionCookie: string, sessionToken: string, applicationId: string): Promise<Session | null> => {
 	try {
 		return await sessionService.verify({
 			firebaseSessionCookie,
@@ -47,9 +34,7 @@ const resolveCurrentSession = async (
  * @param request - Incoming logout request.
  * @returns An empty successful response.
  */
-export const POST = async (
-	request: NextRequest
-): Promise<Response> => {
+export const POST = async (request: NextRequest): Promise<Response> => {
 	try {
 		assertSameOrigin(request);
 
@@ -60,11 +45,7 @@ export const POST = async (
 		const sessionToken = cookieStore.get(authConfig.cookieNames.connection)?.value;
 
 		if (firebaseSessionCookie && sessionToken) {
-			const session = await resolveCurrentSession(
-				firebaseSessionCookie,
-				sessionToken,
-				applicationId
-			);
+			const session = await resolveCurrentSession(firebaseSessionCookie, sessionToken, applicationId);
 
 			if (session) {
 				await sessionService.revoke({

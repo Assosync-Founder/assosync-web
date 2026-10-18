@@ -1,14 +1,7 @@
 import 'server-only';
 
-import type {
-	BatchUpdateOperation,
-	FirestoreRepository
-} from '@assosync/firestore';
-import type {
-	Session,
-	SessionRepository,
-	StoredSession
-} from '@/types/auth';
+import type { BatchUpdateOperation, FirestoreRepository } from '@assosync/firestore';
+import type { Session, SessionRepository, StoredSession } from '@/types/auth';
 
 const ACCOUNT_COLLECTION = 'account';
 const SESSION_COLLECTION = 'sessions';
@@ -20,15 +13,8 @@ const MAXIMUM_DOCUMENT_ID_LENGTH = 128;
  * @param label - Identifier label used in the error message.
  * @throws {TypeError} When the identifier is invalid.
  */
-const assertDocumentId = (
-	value: string,
-	label: string
-): void => {
-	if (
-		!value.trim() ||
-		value.length > MAXIMUM_DOCUMENT_ID_LENGTH ||
-		value.includes('/')
-	) {
+const assertDocumentId = (value: string, label: string): void => {
+	if (!value.trim() || value.length > MAXIMUM_DOCUMENT_ID_LENGTH || value.includes('/')) {
 		throw new TypeError(`${label} is invalid.`);
 	}
 };
@@ -38,13 +24,8 @@ const assertDocumentId = (
  * @param userId - Firebase user identifier.
  * @returns The account session collection path.
  */
-const getSessionCollectionPath = (
-	userId: string
-): string => {
-	assertDocumentId(
-		userId,
-		'The Firebase user identifier'
-	);
+const getSessionCollectionPath = (userId: string): string => {
+	assertDocumentId(userId, 'The Firebase user identifier');
 
 	return `${ACCOUNT_COLLECTION}/${userId}/${SESSION_COLLECTION}`;
 };
@@ -55,14 +36,8 @@ const getSessionCollectionPath = (
  * @param sessionId - Session document identifier.
  * @returns The session document path.
  */
-const getSessionPath = (
-	userId: string,
-	sessionId: string
-): string => {
-	assertDocumentId(
-		sessionId,
-		'The session identifier'
-	);
+const getSessionPath = (userId: string, sessionId: string): string => {
+	assertDocumentId(sessionId, 'The session identifier');
 
 	return `${getSessionCollectionPath(userId)}/${sessionId}`;
 };
@@ -72,9 +47,7 @@ const getSessionPath = (
  * @param value - Value to inspect.
  * @returns Whether the value is a string-keyed record.
  */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
@@ -87,9 +60,7 @@ const isRecord = (
  * @param value - Value to inspect.
  * @returns Whether the value is a valid JavaScript date.
  */
-const isValidDate = (
-	value: unknown
-): value is Date => {
+const isValidDate = (value: unknown): value is Date => {
 	return (
 		value instanceof Date &&
 		!Number.isNaN(value.getTime())
@@ -102,13 +73,9 @@ const isValidDate = (
  * @returns The validated application session.
  * @throws {TypeError} When the stored session is invalid.
  */
-const toSession = (
-	value: unknown
-): Session => {
+const toSession = (value: unknown): Session => {
 	if (!isRecord(value)) {
-		throw new TypeError(
-			'The stored authentication session is invalid.'
-		);
+		throw new TypeError('The stored authentication session is invalid.');
 	}
 
 	const {
@@ -124,8 +91,7 @@ const toSession = (
 		updated
 	} = value;
 
-	if (
-		typeof uid !== 'string' ||
+	if (typeof uid !== 'string' ||
 		!uid ||
 		typeof tokenHash !== 'string' ||
 		!tokenHash ||
@@ -142,11 +108,8 @@ const toSession = (
 			!isValidDate(revoked)
 		) ||
 		!isValidDate(created) ||
-		!isValidDate(updated)
-	) {
-		throw new TypeError(
-			'The stored authentication session is invalid.'
-		);
+		!isValidDate(updated)) {
+		throw new TypeError('The stored authentication session is invalid.');
 	}
 
 	return {
@@ -169,16 +132,11 @@ const toSession = (
  * @returns The validated account session.
  * @throws {TypeError} When ownership is inconsistent.
  */
-const toOwnedSession = (
-	value: unknown,
-	userId: string
-): Session => {
+const toOwnedSession = (value: unknown, userId: string): Session => {
 	const session = toSession(value);
 
 	if (session.userId !== userId) {
-		throw new TypeError(
-			'The stored authentication session owner is invalid.'
-		);
+		throw new TypeError('The stored authentication session owner is invalid.');
 	}
 
 	return session;
@@ -189,15 +147,11 @@ const toOwnedSession = (
  * @param firestore - Shared Firestore repository.
  * @returns The application session repository.
  */
-const createSessionRepository = (
-	firestore: FirestoreRepository
-): SessionRepository => {
+const createSessionRepository = (firestore: FirestoreRepository): SessionRepository => {
 	return {
 		create: async (session) => {
 			const storedSession = await firestore.create<StoredSession>(
-				getSessionCollectionPath(
-					session.userId
-				),
+				getSessionCollectionPath(session.userId),
 				{
 					tokenHash: session.tokenHash,
 					userId: session.userId,
@@ -209,23 +163,12 @@ const createSessionRepository = (
 				}
 			);
 
-			return toOwnedSession(
-				storedSession,
-				session.userId
-			);
+			return toOwnedSession(storedSession, session.userId);
 		},
 
-		findByTokenHash: async (
-			userId,
-			tokenHash,
-			applicationId
-		) => {
-			const result =
-				await firestore.search<StoredSession>({
-					col:
-						getSessionCollectionPath(
-							userId
-						),
+		findByTokenHash: async (userId, tokenHash, applicationId) => {
+			const result = await firestore.search<StoredSession>({
+					col: getSessionCollectionPath(userId),
 					where: [
 						[
 							'tokenHash',
@@ -247,10 +190,7 @@ const createSessionRepository = (
 				return null;
 			}
 
-			return toOwnedSession(
-				storedSession,
-				userId
-			);
+			return toOwnedSession(storedSession, userId);
 		},
 
 		listByUser: async (userId) => {
@@ -279,40 +219,20 @@ const createSessionRepository = (
 			return sessions;
 		},
 
-		touchActive: async (
-			userId,
-			sessionId,
-			applicationId,
-			seenAt
-		) => {
+		touchActive: async (userId, sessionId, applicationId, seenAt) => {
 			return firestore.transaction(
 				async (transaction) => {
-					const path = getSessionPath(
-						userId,
-						sessionId
-					);
+					const path = getSessionPath(userId, sessionId);
 
-					const storedSession =
-						await transaction.get<StoredSession>(
-							path
-						);
+					const storedSession = await transaction.get<StoredSession>(path);
 
 					if (!storedSession) {
 						return null;
 					}
 
-					const session = toOwnedSession(
-						storedSession,
-						userId
-					);
+					const session = toOwnedSession(storedSession, userId);
 
-					if (
-						session.applicationId !==
-						applicationId ||
-						session.revokedAt !== null ||
-						session.expiresAt.getTime() <=
-						seenAt.getTime()
-					) {
+					if (session.applicationId !== applicationId || session.revokedAt !== null || session.expiresAt.getTime() <= seenAt.getTime()) {
 						return null;
 					}
 
@@ -321,49 +241,27 @@ const createSessionRepository = (
 						lastSeenAt: seenAt
 					};
 
-					transaction.update<StoredSession>(
-						path,
-						{
-							lastSeen: seenAt
-						}
-					);
+					transaction.update<StoredSession>(path, { lastSeen: seenAt });
 
 					return updatedSession;
 				}
 			);
 		},
 
-		revoke: async (
-			userId,
-			sessionId,
-			applicationId,
-			revokedAt
-		) => {
+		revoke: async (userId, sessionId, applicationId, revokedAt) => {
 			return firestore.transaction(
 				async (transaction) => {
-					const path = getSessionPath(
-						userId,
-						sessionId
-					);
+					const path = getSessionPath(userId, sessionId);
 
-					const storedSession =
-						await transaction.get<StoredSession>(
-							path
-						);
+					const storedSession = await transaction.get<StoredSession>(path);
 
 					if (!storedSession) {
 						return null;
 					}
 
-					const session = toOwnedSession(
-						storedSession,
-						userId
-					);
+					const session = toOwnedSession(storedSession, userId);
 
-					if (
-						session.applicationId !==
-						applicationId
-					) {
+					if (session.applicationId !== applicationId) {
 						return null;
 					}
 
@@ -376,23 +274,14 @@ const createSessionRepository = (
 						revokedAt
 					};
 
-					transaction.update<StoredSession>(
-						path,
-						{
-							revoked: revokedAt
-						}
-					);
+					transaction.update<StoredSession>(path, { revoked: revokedAt });
 
 					return revokedSession;
 				}
 			);
 		},
 
-		revokeByDevice: async (
-			userId,
-			deviceId,
-			revokedAt
-		) => {
+		revokeByDevice: async (userId, deviceId, revokedAt) => {
 			let revokedSessionCount = 0;
 			let startAfterDocId: string | undefined;
 
@@ -409,26 +298,17 @@ const createSessionRepository = (
 						: {})
 				});
 
-				const updates: BatchUpdateOperation<StoredSession>[] =
-					result.rows.map((storedSession) => {
-						const session = toOwnedSession(
-							storedSession,
-							userId
-						);
+				const updates: BatchUpdateOperation<StoredSession>[] = result.rows.map((storedSession) => {
+						const session = toOwnedSession(storedSession, userId);
 
 						return {
-							path: getSessionPath(
-								userId,
-								session.id
-							),
+							path: getSessionPath(userId, session.id),
 							data: { revoked: revokedAt }
 						};
 					});
 
 				if (updates.length > 0) {
-					await firestore.batch<StoredSession>({
-						update: updates
-					});
+					await firestore.batch<StoredSession>({ update: updates });
 
 					revokedSessionCount += updates.length;
 				}
@@ -439,29 +319,18 @@ const createSessionRepository = (
 			return revokedSessionCount;
 		},
 
-		revokeOwned: async (
-			userId,
-			sessionId,
-			revokedAt
-		) => {
+		revokeOwned: async (userId, sessionId, revokedAt) => {
 			return firestore.transaction(
 				async (transaction) => {
-					const path = getSessionPath(
-						userId,
-						sessionId
-					);
+					const path = getSessionPath(userId, sessionId);
 
-					const storedSession =
-						await transaction.get<StoredSession>(path);
+					const storedSession = await transaction.get<StoredSession>(path);
 
 					if (!storedSession) {
 						return null;
 					}
 
-					const session = toOwnedSession(
-						storedSession,
-						userId
-					);
+					const session = toOwnedSession(storedSession, userId);
 
 					if (session.revokedAt !== null) {
 						return session;
@@ -472,21 +341,14 @@ const createSessionRepository = (
 						revokedAt
 					};
 
-					transaction.update<StoredSession>(
-						path,
-						{ revoked: revokedAt }
-					);
+					transaction.update<StoredSession>(path, { revoked: revokedAt });
 
 					return revokedSession;
 				}
 			);
 		},
 
-		revokeOthers: async (
-			userId,
-			currentSessionId,
-			revokedAt
-		) => {
+		revokeOthers: async (userId, currentSessionId, revokedAt) => {
 			let revokedSessionCount = 0;
 			let startAfterDocId: string | undefined;
 
@@ -503,28 +365,17 @@ const createSessionRepository = (
 				const updates: BatchUpdateOperation<StoredSession>[] = [];
 
 				for (const storedSession of result.rows) {
-					const session = toOwnedSession(
-						storedSession,
-						userId
-					);
+					const session = toOwnedSession(storedSession, userId);
 
-					if (
-						session.id === currentSessionId ||
-						session.expiresAt.getTime() <= revokedAt.getTime()
-					) {
+					if (session.id === currentSessionId || session.expiresAt.getTime() <= revokedAt.getTime()) {
 						continue;
 					}
 
-					updates.push({
-						path: getSessionPath(userId, session.id),
-						data: { revoked: revokedAt }
-					});
+					updates.push({ path: getSessionPath(userId, session.id), data: { revoked: revokedAt } });
 				}
 
 				if (updates.length > 0) {
-					await firestore.batch<StoredSession>({
-						update: updates
-					});
+					await firestore.batch<StoredSession>({ update: updates });
 
 					revokedSessionCount += updates.length;
 				}

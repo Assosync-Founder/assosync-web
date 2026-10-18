@@ -1,12 +1,6 @@
 import type { Rest } from '@assosync/firestore';
-import type {
-	AuthenticationResponseJSON,
-	AuthenticatorTransport,
-	CredentialDeviceType,
-	PublicKeyCredentialCreationOptionsJSON,
-	PublicKeyCredentialRequestOptionsJSON,
-	RegistrationResponseJSON
-} from '@simplewebauthn/server';
+import type { AuthenticationResponseJSON, AuthenticatorTransport, CredentialDeviceType, PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
+import type { WebAuthorizationRequest } from '@/types/auth';
 
 /** Exact relying-party values for one trusted Account WebAuthn origin. */
 export type PasskeyRelyingParty = {
@@ -15,6 +9,39 @@ export type PasskeyRelyingParty = {
 
 	/** WebAuthn relying-party origin. */
 	readonly origin: string;
+};
+
+/** Confidential client credentials required by passkey Web endpoints. */
+export type PasskeyWebClientInput = {
+	/** Registered confidential client identifier. */
+	readonly clientId: string;
+
+	/** Server-only confidential client secret. */
+	readonly clientSecret: string;
+
+	/** Exact registered callback URI. */
+	readonly redirectUri: string;
+
+	/** Exact browser origin performing the ceremony. */
+	readonly passkeyOrigin: string;
+};
+
+/** Active product-hosted passkey authorization resolved at the HTTP boundary. */
+export type PasskeyWebAuthorizationContext = {
+	/** Authenticated confidential client fields. */
+	readonly client: PasskeyWebClientInput;
+
+	/** Active Account authorization identifier. */
+	readonly authorizationId: string;
+
+	/** Server-held authorization secret. */
+	readonly browserToken: string;
+
+	/** Active authorization resolved from Redis. */
+	readonly authorization: WebAuthorizationRequest;
+
+	/** Exact RP ID and product origin used for verification. */
+	readonly relyingParty: PasskeyRelyingParty;
 };
 
 /** Persisted passkey owned by an Assosync account. */
@@ -81,6 +108,12 @@ export type PasskeyChallenge = {
 	readonly id: string;
 	readonly purpose: PasskeyChallengePurpose;
 	readonly challenge: string;
+
+	/** RP ID fixed when the challenge is created. */
+	readonly relyingPartyId: string;
+
+	/** Exact browser origin fixed when the challenge is created. */
+	readonly relyingPartyOrigin: string;
 	readonly userId: string | null;
 	readonly authorizationId: string | null;
 	readonly browserTokenHash: string;
@@ -90,32 +123,13 @@ export type PasskeyChallenge = {
 
 /** Passkey persistence contract. */
 export type PasskeyRepository = {
-	readonly create: (
-		passkey: Omit<Passkey, 'id' | 'createdAt' | 'updatedAt'>
-	) => Promise<Passkey>;
+	readonly create: (passkey: Omit<Passkey, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Passkey>;
 	readonly listByUser: (userId: string) => Promise<readonly Passkey[]>;
-	readonly findByCredentialIdGlobally: (
-		credentialId: string
-	) => Promise<Passkey | null>;
-	readonly findById: (
-		userId: string,
-		passkeyId: string
-	) => Promise<Passkey | null>;
-	readonly updateDisplayName: (
-		userId: string,
-		passkeyId: string,
-		displayName: string
-	) => Promise<void>;
-	readonly updateCounter: (
-		userId: string,
-		passkeyId: string,
-		counter: number,
-		lastUsedAt: Date
-	) => Promise<void>;
-	readonly delete: (
-		userId: string,
-		passkeyId: string
-	) => Promise<void>;
+	readonly findByCredentialIdGlobally: (credentialId: string) => Promise<Passkey | null>;
+	readonly findById: (userId: string, passkeyId: string) => Promise<Passkey | null>;
+	readonly updateDisplayName: (userId: string, passkeyId: string, displayName: string) => Promise<void>;
+	readonly updateCounter: (userId: string, passkeyId: string, counter: number, lastUsedAt: Date) => Promise<void>;
+	readonly delete: (userId: string, passkeyId: string) => Promise<void>;
 };
 
 /** Passkey metadata safe to expose in Account security settings. */
@@ -142,12 +156,7 @@ export type AccountPasskey = {
 /** Redis persistence contract for one-time WebAuthn challenges. */
 export type PasskeyChallengeRepository = {
 	readonly create: (challenge: PasskeyChallenge) => Promise<void>;
-	readonly consume: (
-		id: string,
-		browserTokenHash: string,
-		purpose: PasskeyChallengePurpose,
-		consumedAt: Date
-	) => Promise<PasskeyChallenge | null>;
+	readonly consume: (id: string, browserTokenHash: string, purpose: PasskeyChallengePurpose, consumedAt: Date) => Promise<PasskeyChallenge | null>;
 };
 
 /** Generated registration options and their transaction identifier. */

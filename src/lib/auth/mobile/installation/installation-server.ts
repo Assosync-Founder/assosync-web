@@ -4,12 +4,9 @@ import createMobileInstallationRepository from '@/lib/auth/mobile/installation/i
 import MobileInstallationService from '@/lib/auth/mobile/installation/installation-service';
 import firestoreServer from '@/services/firestore/firestore-server';
 
-const mobileInstallationRepository =
-	createMobileInstallationRepository(firestoreServer);
+const mobileInstallationRepository = createMobileInstallationRepository(firestoreServer);
 
 /** Shared server-side mobile authentication installation service. */
-const mobileInstallationService = new MobileInstallationService(
-	mobileInstallationRepository
-);
+const mobileInstallationService = new MobileInstallationService(mobileInstallationRepository);
 
 export default mobileInstallationService;

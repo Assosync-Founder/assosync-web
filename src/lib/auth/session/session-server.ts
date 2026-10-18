@@ -11,23 +11,9 @@ import firestoreServer from '@/services/firestore/firestore-server';
 
 const sessionRepository = createSessionRepository(firestoreServer);
 
-const firebaseSession =
-	createFirebaseSessionAdapter(
-		firebaseAdmin.auth,
-		{
-			maxAuthenticationAgeMs: authConfig.session.maxAuthenticationAgeMs
-		}
-	);
+const firebaseSession = createFirebaseSessionAdapter(firebaseAdmin.auth, { maxAuthenticationAgeMs: authConfig.session.maxAuthenticationAgeMs });
 
 /** Shared server-side application session service. */
-const sessionService = new SessionService(
-	sessionRepository,
-	firebaseSession,
-	deviceService,
-	securityEventService,
-	{
-		lifetimeMs: authConfig.session.lifetimeMs
-	}
-);
+const sessionService = new SessionService(sessionRepository, firebaseSession, deviceService, securityEventService, { lifetimeMs: authConfig.session.lifetimeMs });
 
 export default sessionService;

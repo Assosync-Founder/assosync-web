@@ -12,9 +12,7 @@ import {
 	readRequiredString,
 	resolveRequestOrigin
 } from '@/lib/auth/http/auth-http';
-import resolveAuthenticationRequestContext, {
-	requireWebAuthorization
-} from '@/lib/auth/web/authorization-http';
+import resolveAuthenticationRequestContext, { requireWebAuthorization } from '@/lib/auth/web/authorization-http';
 import webAuthorizationService from '@/lib/auth/web/authorization-server';
 
 /** Binds the Firebase ID token obtained from a verified passkey to SSO.
@@ -31,10 +29,7 @@ export const POST = async (request: NextRequest): Promise<Response> => {
 		const body = await readJsonBody(request);
 		const authorizationId = readAuthenticationIdentifier(body.authorizationId);
 		const idToken = readRequiredString(body, 'idToken');
-		const context = await resolveAuthenticationRequestContext(
-			request,
-			authorizationId
-		);
+		const context = await resolveAuthenticationRequestContext(request, authorizationId);
 		const authorization = requireWebAuthorization(context);
 		const identity = await authenticationService.verifyIdentity(idToken);
 
@@ -42,22 +37,11 @@ export const POST = async (request: NextRequest): Promise<Response> => {
 			return NextResponse.json({ error: 'authentication_failed' }, { status: 401 });
 		}
 
-		const browserToken = readRequiredAuthCookie(
-			cookieStore.get(authConfig.cookieNames.webAuthorization)?.value,
-			'authorization_invalid'
-		);
+		const browserToken = readRequiredAuthCookie(cookieStore.get(authConfig.cookieNames.webAuthorization)?.value, 'authorization_invalid');
 
-		await webAuthorizationService.bindPasskeyIdentityToken(
-			authorizationId,
-			browserToken,
-			identity.userId,
-			idToken
-		);
+		await webAuthorizationService.bindPasskeyIdentityToken(authorizationId, browserToken, identity.userId, idToken);
 
-		const continuationUrl = new URL(
-			'/api/auth/web/continue',
-			resolveRequestOrigin(request)
-		);
+		const continuationUrl = new URL('/api/auth/web/continue', resolveRequestOrigin(request));
 		continuationUrl.searchParams.set('authorization', authorizationId);
 
 		return NextResponse.json({ continuationUrl: continuationUrl.toString() });

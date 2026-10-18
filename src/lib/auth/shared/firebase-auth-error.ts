@@ -38,15 +38,8 @@ const INVALID_CREDENTIAL_CODES = new Set([
  * @param error - Unknown value thrown by Firebase Admin.
  * @returns The normalized provider code or null.
  */
-const getFirebaseErrorCode = (
-	error: unknown
-): string | null => {
-	if (
-		typeof error !== 'object' ||
-		error === null ||
-		!('code' in error) ||
-		typeof error.code !== 'string'
-	) {
+const getFirebaseErrorCode = (error: unknown): string | null => {
+	if (typeof error !== 'object' || error === null || !('code' in error) || typeof error.code !== 'string') {
 		return null;
 	}
 
@@ -59,10 +52,7 @@ const getFirebaseErrorCode = (
  * @param context - Authentication operation that failed.
  * @returns A stable authentication error.
  */
-const toFirebaseAuthError = (
-	error: unknown,
-	context: FirebaseAuthErrorContext
-): AuthError => {
+const toFirebaseAuthError = (error: unknown, context: FirebaseAuthErrorContext): AuthError => {
 	if (error instanceof AuthError) {
 		return error;
 	}
@@ -70,24 +60,15 @@ const toFirebaseAuthError = (
 	const code = getFirebaseErrorCode(error);
 
 	if (code && ACCOUNT_DISABLED_CODES.has(code)) {
-		return new AuthError(
-			'account_disabled',
-			'The authenticated account is disabled.'
-		);
+		return new AuthError('account_disabled', 'The authenticated account is disabled.');
 	}
 
 	if (code && SESSION_EXPIRED_CODES.has(code)) {
-		return new AuthError(
-			'session_expired',
-			'The Firebase session has expired.'
-		);
+		return new AuthError('session_expired', 'The Firebase session has expired.');
 	}
 
 	if (code && SESSION_REVOKED_CODES.has(code)) {
-		return new AuthError(
-			'session_revoked',
-			'The Firebase session was revoked.'
-		);
+		return new AuthError('session_revoked', 'The Firebase session was revoked.');
 	}
 
 	if (code && INVALID_CREDENTIAL_CODES.has(code)) {
@@ -95,16 +76,10 @@ const toFirebaseAuthError = (
 			? 'session_invalid'
 			: 'identity_invalid';
 
-		return new AuthError(
-			errorCode,
-			'The Firebase authentication credential is invalid.'
-		);
+		return new AuthError(errorCode, 'The Firebase authentication credential is invalid.');
 	}
 
-	return new AuthError(
-		'firebase_unavailable',
-		'The Firebase Authentication service is temporarily unavailable.'
-	);
+	return new AuthError('firebase_unavailable', 'The Firebase Authentication service is temporarily unavailable.');
 };
 
 export default toFirebaseAuthError;

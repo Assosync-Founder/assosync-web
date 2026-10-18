@@ -3,10 +3,7 @@ import 'server-only';
 import MobileInstallationService from '@/lib/auth/mobile/installation/installation-service';
 import { logAuthServerError } from '@/lib/auth/shared/auth-logger';
 import FirebaseCloudMessagingService from '@/services/firebase/messaging-service';
-import type {
-	SendMobilePushNotificationInput,
-	SendMobilePushNotificationResult
-} from '@/types/auth';
+import type { SendMobilePushNotificationInput, SendMobilePushNotificationResult } from '@/types/auth';
 
 /** Sends authentication notifications to registered mobile installations. */
 class MobileNotificationService {
@@ -27,13 +24,8 @@ class MobileNotificationService {
 	 * @param input - Account identity and localized notification payload.
 	 * @returns Delivery results without Firebase registration tokens.
 	 */
-	readonly sendToActiveMobileInstallations = async (
-		input: SendMobilePushNotificationInput
-	): Promise<SendMobilePushNotificationResult> => {
-		const mobileInstallations =
-			await this.mobileInstallationService.listActiveForDelivery(
-				input.userId
-			);
+	readonly sendToActiveMobileInstallations = async (input: SendMobilePushNotificationInput): Promise<SendMobilePushNotificationResult> => {
+		const mobileInstallations = await this.mobileInstallationService.listActiveForDelivery(input.userId);
 
 		const result = await this.firebaseCloudMessagingService.sendEach(
 			mobileInstallations.map((mobileInstallation) => {
@@ -48,10 +40,7 @@ class MobileNotificationService {
 
 		const invalidMobileInstallationIds = result.results.flatMap(
 			(deliveryResult) => {
-				if (
-					deliveryResult.status === 'failed' &&
-					deliveryResult.isInvalidToken
-				) {
+				if (deliveryResult.status === 'failed' && deliveryResult.isInvalidToken) {
 					return [deliveryResult.recipientId];
 				}
 
@@ -63,15 +52,9 @@ class MobileNotificationService {
 			invalidMobileInstallationIds.map(
 				async (mobileInstallationId) => {
 					try {
-						await this.mobileInstallationService.disable(
-							input.userId,
-							mobileInstallationId
-						);
+						await this.mobileInstallationService.disable(input.userId, mobileInstallationId);
 					} catch (error: unknown) {
-						logAuthServerError(
-							error,
-							'mobile_installation_disable'
-						);
+						logAuthServerError(error, 'mobile_installation_disable');
 					}
 				}
 			)

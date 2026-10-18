@@ -10,9 +10,6 @@ const passkeyRepository = createPasskeyRepository(firestoreServer);
 const passkeyChallengeRepository = createPasskeyChallengeRepository(redis);
 
 /** Shared server-side passkey service. */
-const passkeyService = new PasskeyService(
-	passkeyRepository,
-	passkeyChallengeRepository
-);
+const passkeyService = new PasskeyService(passkeyRepository, passkeyChallengeRepository);
 
 export default passkeyService;

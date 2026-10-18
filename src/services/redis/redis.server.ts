@@ -11,9 +11,6 @@ if (!redisUrl || !redisToken) {
 }
 
 /** Shared server-side Redis client used by authentication services. */
-const redis = new Redis({
-	url: redisUrl,
-	token: redisToken
-});
+const redis = new Redis({ url: redisUrl, token: redisToken });
 
 export default redis;

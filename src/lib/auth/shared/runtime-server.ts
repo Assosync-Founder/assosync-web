@@ -1,18 +1,7 @@
 import 'server-only';
 
-import {
-	createHash,
-	createHmac,
-	randomBytes,
-	randomInt
-} from 'node:crypto';
-import type {
-	Clock,
-	TokenGenerator,
-	TokenHasher,
-	VerificationCodeGenerator,
-	VerificationCodeHasher
-} from '@/types/auth';
+import { createHash, createHmac, randomBytes, randomInt } from 'node:crypto';
+import type { Clock, TokenGenerator, TokenHasher, VerificationCodeGenerator, VerificationCodeHasher } from '@/types/auth';
 
 /** Uses the system clock. */
 export const systemClock: Clock = {
@@ -48,17 +37,13 @@ export const secureVerificationCodeGenerator: VerificationCodeGenerator = {
  * @returns A verification code hasher.
  * @throws {TypeError} When the secret contains fewer than 32 bytes.
  */
-export const createHmacVerificationCodeHasher = (
-	secret: string | Uint8Array
-): VerificationCodeHasher => {
+export const createHmacVerificationCodeHasher = (secret: string | Uint8Array): VerificationCodeHasher => {
 	const secretLength = typeof secret === 'string'
 		? Buffer.byteLength(secret, 'utf8')
 		: secret.byteLength;
 
 	if (secretLength < 32) {
-		throw new TypeError(
-			'The verification code secret must contain at least 32 bytes.'
-		);
+		throw new TypeError('The verification code secret must contain at least 32 bytes.');
 	}
 
 	return {

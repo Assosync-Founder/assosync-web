@@ -1,29 +1,24 @@
 import 'server-only';
 
 import type { Redis } from '@upstash/redis';
-import type {
-	PasskeyChallenge,
-	PasskeyChallengeRepository,
-	PasskeyChallengePurpose
-} from '@/types/passkey';
+import type { PasskeyChallenge, PasskeyChallengeRepository, PasskeyChallengePurpose } from '@/types/passkey';
 
 const parseChallenge = (value: unknown): PasskeyChallenge | null => {
 	if (typeof value !== 'object' || value === null) {
 		return null;
 	}
 
-	const record: Record<string, unknown> = Object.fromEntries(
-		Object.entries(value)
-	);
+	const record: Record<string, unknown> = Object.fromEntries(Object.entries(value));
 	const purpose = record.purpose;
 	const expiresAt = typeof record.expiresAt === 'string'
 		? new Date(record.expiresAt)
 		: null;
 
-	if (
-		typeof record.id !== 'string' ||
+	if (typeof record.id !== 'string' ||
 		(purpose !== 'authentication' && purpose !== 'registration') ||
 		typeof record.challenge !== 'string' ||
+		typeof record.relyingPartyId !== 'string' ||
+		typeof record.relyingPartyOrigin !== 'string' ||
 		(record.userId !== null &&
 			typeof record.userId !== 'string') ||
 		(record.authorizationId !== null &&
@@ -32,8 +27,7 @@ const parseChallenge = (value: unknown): PasskeyChallenge | null => {
 		(record.webauthnUserId !== null &&
 			typeof record.webauthnUserId !== 'string') ||
 		!expiresAt ||
-		Number.isNaN(expiresAt.getTime())
-	) {
+		Number.isNaN(expiresAt.getTime())) {
 		return null;
 	}
 
@@ -41,6 +35,8 @@ const parseChallenge = (value: unknown): PasskeyChallenge | null => {
 		id: record.id,
 		purpose,
 		challenge: record.challenge,
+		relyingPartyId: record.relyingPartyId,
+		relyingPartyOrigin: record.relyingPartyOrigin,
 		userId: record.userId,
 		authorizationId: record.authorizationId,
 		browserTokenHash: record.browserTokenHash,
@@ -53,9 +49,7 @@ const parseChallenge = (value: unknown): PasskeyChallenge | null => {
  * @param redis - Shared Redis client.
  * @returns Challenge persistence contract.
  */
-const createPasskeyChallengeRepository = (
-	redis: Redis
-): PasskeyChallengeRepository => {
+const createPasskeyChallengeRepository = (redis: Redis): PasskeyChallengeRepository => {
 	const getKey = (purpose: PasskeyChallengePurpose, id: string): string => {
 		return `auth:passkey:${purpose}:${encodeURIComponent(id)}`;
 	};
@@ -85,11 +79,7 @@ const createPasskeyChallengeRepository = (
 			const stored = await redis.getdel<unknown>(getKey(purpose, id));
 			const challenge = parseChallenge(stored);
 
-			if (
-				!challenge ||
-				challenge.browserTokenHash !== browserTokenHash ||
-				challenge.expiresAt.getTime() <= consumedAt.getTime()
-			) {
+			if (!challenge || challenge.browserTokenHash !== browserTokenHash || challenge.expiresAt.getTime() <= consumedAt.getTime()) {
 				return null;
 			}
 

@@ -1,17 +1,8 @@
 import 'server-only';
 
-import {
-	DeviceApprovalEmail,
-	MailError
-} from '@assosync/email';
+import { DeviceApprovalEmail, MailError } from '@assosync/email';
 import { createElement } from 'react';
-import type {
-	SendVerificationEmailInput,
-	VerificationEmailBrand,
-	VerificationEmailResult,
-	VerificationEmailSender,
-	VerificationEmailServiceOptions
-} from '@/types/auth';
+import type { SendVerificationEmailInput, VerificationEmailBrand, VerificationEmailResult, VerificationEmailSender, VerificationEmailServiceOptions } from '@/types/auth';
 
 /** Composes and sends new-device verification emails. */
 class VerificationEmailService {
@@ -27,10 +18,7 @@ class VerificationEmailService {
 	 * @param options - Application-specific email configurations.
 	 * @throws {MailError} When the configuration is invalid.
 	 */
-	constructor(
-		private readonly emails: VerificationEmailSender,
-		options: VerificationEmailServiceOptions
-	) {
+	constructor(private readonly emails: VerificationEmailSender, options: VerificationEmailServiceOptions) {
 		this.brands = new Map(
 			options.brands.map((brand) => {
 				return [
@@ -40,26 +28,13 @@ class VerificationEmailService {
 			})
 		);
 
-		if (
-			this.brands.size === 0 ||
-			this.brands.size !== options.brands.length
-		) {
-			throw new MailError(
-				'config_invalid',
-				'Verification email brands must be non-empty and unique.'
-			);
+		if (this.brands.size === 0 || this.brands.size !== options.brands.length) {
+			throw new MailError('config_invalid', 'Verification email brands must be non-empty and unique.');
 		}
 
 		for (const brand of options.brands) {
-			if (
-				!brand.applicationId.trim() ||
-				!brand.displayName.trim() ||
-				!brand.from.trim()
-			) {
-				throw new MailError(
-					'config_invalid',
-					'The verification email brand configuration is invalid.'
-				);
+			if (!brand.applicationId.trim() || !brand.displayName.trim() || !brand.from.trim()) {
+				throw new MailError('config_invalid', 'The verification email brand configuration is invalid.');
 			}
 		}
 	}
@@ -70,17 +45,13 @@ class VerificationEmailService {
 	 * @returns The accepted provider message.
 	 * @throws {MailError} When the input or delivery fails.
 	 */
-	readonly send = async (
-		input: SendVerificationEmailInput
-	): Promise<VerificationEmailResult> => {
+	readonly send = async (input: SendVerificationEmailInput): Promise<VerificationEmailResult> => {
 		const {
 			verification,
 			emailCode
 		} = input.issued;
 
-		const brand = this.brands.get(
-			verification.applicationId
-		);
+		const brand = this.brands.get(verification.applicationId);
 
 		const firstname = input.firstname?.trim();
 		const recipient = input.to.trim();
@@ -90,16 +61,8 @@ class VerificationEmailService {
 			verification.createdAt.getTime()
 		);
 
-		if (
-			!brand ||
-			!recipient ||
-			!Number.isSafeInteger(validityMs) ||
-			validityMs <= 0
-		) {
-			throw new MailError(
-				'input_invalid',
-				'The device verification email input is invalid.'
-			);
+		if (!brand || !recipient || !Number.isSafeInteger(validityMs) || validityMs <= 0) {
+			throw new MailError('input_invalid', 'The device verification email input is invalid.');
 		}
 
 		const formattedCode = [
@@ -107,10 +70,7 @@ class VerificationEmailService {
 			emailCode.slice(3)
 		].join(' ');
 
-		const expirationMinutes = Math.max(
-			1,
-			Math.ceil(validityMs / 60_000)
-		);
+		const expirationMinutes = Math.max(1, Math.ceil(validityMs / 60_000));
 
 		const email = createElement(
 			DeviceApprovalEmail,
@@ -129,8 +89,7 @@ class VerificationEmailService {
 		return this.emails.send({
 			from: brand.from,
 			to: [recipient],
-			subject:
-				`Confirmez ce nouvel appareil sur ${brand.displayName}`,
+			subject: `Confirmez ce nouvel appareil sur ${brand.displayName}`,
 			react: email,
 			...(brand.replyTo
 				? {

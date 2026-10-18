@@ -27,10 +27,7 @@ import type {
  * @param action - Asynchronous operation to observe.
  * @returns The operation result.
  */
-const observeAuthenticationOperation = async <Result>(
-	operation: string,
-	action: () => Promise<Result>
-): Promise<Result> => {
+const observeAuthenticationOperation = async <Result>(operation: string, action: () => Promise<Result>): Promise<Result> => {
 	try {
 		return await action();
 	} catch (error: unknown) {
@@ -64,13 +61,8 @@ class AuthenticationService {
 	 * @param idToken - Firebase ID token obtained after product sign-in.
 	 * @returns The verified and enabled Firebase identity.
 	 */
-	readonly verifyIdentity = async (
-		idToken: string
-	): Promise<AuthenticationIdentity> => {
-		this.assertRequiredValue(
-			idToken,
-			'The Firebase ID token is required.'
-		);
+	readonly verifyIdentity = async (idToken: string): Promise<AuthenticationIdentity> => {
+		this.assertRequiredValue(idToken, 'The Firebase ID token is required.');
 
 		return this.identities.verify(idToken);
 	};
@@ -80,23 +72,12 @@ class AuthenticationService {
 	 * @param input - Firebase token, application, and optional device token.
 	 * @returns A ready session or a required device verification.
 	 */
-	readonly start = async (
-		input: StartAuthenticationInput
-	): Promise<StartAuthenticationResult> => {
-		this.assertRequiredValue(
-			input.idToken,
-			'The Firebase ID token is required.'
-		);
+	readonly start = async (input: StartAuthenticationInput): Promise<StartAuthenticationResult> => {
+		this.assertRequiredValue(input.idToken, 'The Firebase ID token is required.');
 
-		this.assertRequiredValue(
-			input.applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(input.applicationId, 'The application identifier is required.');
 
-		const identity = await observeAuthenticationOperation(
-			'authentication_identity_verification',
-			async () => this.verifyIdentity(input.idToken)
-		);
+		const identity = await observeAuthenticationOperation('authentication_identity_verification', async () => this.verifyIdentity(input.idToken));
 
 		const decision = await observeAuthenticationOperation(
 			'authentication_device_preparation',
@@ -111,14 +92,10 @@ class AuthenticationService {
 
 		if (decision.status === 'session_ready') {
 			if (!input.deviceToken) {
-				throw new AuthError(
-					'device_invalid',
-					'The recognized device token is missing.'
-				);
+				throw new AuthError('device_invalid', 'The recognized device token is missing.');
 			}
 
-			const issuedSession =
-				await this.sessions.issue({
+			const issuedSession = await this.sessions.issue({
 					idToken: input.idToken,
 					deviceId: decision.device.id,
 					deviceToken: input.deviceToken,
@@ -139,41 +116,25 @@ class AuthenticationService {
 
 		if (input.verificationMode === 'mobile_approval') {
 			try {
-				const issuedMobileVerification =
-					await this.mobileApprovals.start(
-						verificationInput
-					);
+				const issuedMobileVerification = await this.mobileApprovals.start(verificationInput);
 
 				return {
 					status: 'verification_required',
 					deviceId: decision.device.id,
-					verificationId:
-						issuedMobileVerification.verification.id,
-					browserToken:
-						issuedMobileVerification.browserToken,
-					issuedDeviceToken:
-						decision.issuedDeviceToken,
-					expiresAt:
-						issuedMobileVerification.verification.expiresAt,
+					verificationId: issuedMobileVerification.verification.id,
+					browserToken: issuedMobileVerification.browserToken,
+					issuedDeviceToken: decision.issuedDeviceToken,
+					expiresAt: issuedMobileVerification.verification.expiresAt,
 					verificationMode: 'mobile_approval'
 				};
 			} catch (error: unknown) {
-				if (
-					!(error instanceof AuthError) ||
-					error.code !== 'verification_mode_unavailable'
-				) {
+				if (!(error instanceof AuthError) || error.code !== 'verification_mode_unavailable') {
 					throw error;
 				}
 			}
 		}
 
-		const issuedVerification =
-			await observeAuthenticationOperation(
-				'authentication_email_verification_start',
-				async () => this.verifications.startEmail(
-					verificationInput
-				)
-			);
+		const issuedVerification = await observeAuthenticationOperation('authentication_email_verification_start', async () => this.verifications.startEmail(verificationInput));
 
 		let deliveryFailed = false;
 		let deliveryError: unknown;
@@ -188,10 +149,7 @@ class AuthenticationService {
 			deliveryFailed = true;
 			deliveryError = error;
 
-			logAuthServerError(
-				error,
-				'authentication_email_delivery'
-			);
+			logAuthServerError(error, 'authentication_email_delivery');
 		}
 
 		if (deliveryFailed) {
@@ -204,10 +162,7 @@ class AuthenticationService {
 					deviceId: decision.device.id
 				});
 			} catch (error: unknown) {
-				logAuthServerError(
-					error,
-					'email_verification_cleanup'
-				);
+				logAuthServerError(error, 'email_verification_cleanup');
 			}
 
 			return Promise.reject(deliveryError);
@@ -216,14 +171,10 @@ class AuthenticationService {
 		return {
 			status: 'verification_required',
 			deviceId: decision.device.id,
-			verificationId:
-				issuedVerification.verification.id,
-			browserToken:
-				issuedVerification.browserToken,
-			issuedDeviceToken:
-				decision.issuedDeviceToken,
-			expiresAt:
-				issuedVerification.verification.expiresAt,
+			verificationId: issuedVerification.verification.id,
+			browserToken: issuedVerification.browserToken,
+			issuedDeviceToken: decision.issuedDeviceToken,
+			expiresAt: issuedVerification.verification.expiresAt,
 			verificationMode: 'email_code'
 		};
 	};
@@ -234,19 +185,10 @@ class AuthenticationService {
 	 * @param applicationId - Application requesting authentication.
 	 * @returns Available device verification channels.
 	 */
-	readonly getAvailableVerificationModes = async (
-		idToken: string,
-		applicationId: string
-	): Promise<readonly DeviceVerificationMode[]> => {
-		this.assertRequiredValue(
-			idToken,
-			'The Firebase ID token is required.'
-		);
+	readonly getAvailableVerificationModes = async (idToken: string, applicationId: string): Promise<readonly DeviceVerificationMode[]> => {
+		this.assertRequiredValue(idToken, 'The Firebase ID token is required.');
 
-		this.assertRequiredValue(
-			applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(applicationId, 'The application identifier is required.');
 
 		const identity = await this.identities.verify(idToken);
 
@@ -261,42 +203,20 @@ class AuthenticationService {
 	 * @param input - Bound verification and Firebase authentication values.
 	 * @returns The newly issued authenticated session.
 	 */
-	readonly completeEmail = async (
-		input: CompleteEmailAuthenticationInput
-	): Promise<IssuedSession> => {
-		this.assertRequiredValue(
-			input.idToken,
-			'The Firebase ID token is required.'
-		);
+	readonly completeEmail = async (input: CompleteEmailAuthenticationInput): Promise<IssuedSession> => {
+		this.assertRequiredValue(input.idToken, 'The Firebase ID token is required.');
 
-		this.assertRequiredValue(
-			input.applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(input.applicationId, 'The application identifier is required.');
 
-		this.assertRequiredValue(
-			input.deviceId,
-			'The device identifier is required.'
-		);
+		this.assertRequiredValue(input.deviceId, 'The device identifier is required.');
 
-		this.assertRequiredValue(
-			input.deviceToken,
-			'The device token is required.'
-		);
+		this.assertRequiredValue(input.deviceToken, 'The device token is required.');
 
-		this.assertRequiredValue(
-			input.verificationId,
-			'The verification identifier is required.'
-		);
+		this.assertRequiredValue(input.verificationId, 'The verification identifier is required.');
 
-		this.assertRequiredValue(
-			input.browserToken,
-			'The browser verification token is required.'
-		);
+		this.assertRequiredValue(input.browserToken, 'The browser verification token is required.');
 
-		const identity = await this.identities.verify(
-			input.idToken
-		);
+		const identity = await this.identities.verify(input.idToken);
 
 		await this.verifications.confirmEmail({
 			userId: identity.userId,
@@ -308,9 +228,7 @@ class AuthenticationService {
 		});
 
 		if (!identity.emailVerified) {
-			await this.identities.markEmailVerified(
-				identity.userId
-			);
+			await this.identities.markEmailVerified(identity.userId);
 		}
 
 		await this.verifications.complete({
@@ -335,43 +253,22 @@ class AuthenticationService {
 	 * @returns The newly issued authenticated session.
 	 * @throws {AuthError} When approval is pending, rejected, or invalid.
 	 */
-	readonly completeMobile = async (
-		input: CompleteMobileAuthenticationInput
-	): Promise<IssuedSession> => {
-		this.assertRequiredValue(
-			input.idToken,
-			'The Firebase ID token is required.'
-		);
+	readonly completeMobile = async (input: CompleteMobileAuthenticationInput): Promise<IssuedSession> => {
+		this.assertRequiredValue(input.idToken, 'The Firebase ID token is required.');
 
-		this.assertRequiredValue(
-			input.applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(input.applicationId, 'The application identifier is required.');
 
-		this.assertRequiredValue(
-			input.deviceId,
-			'The device identifier is required.'
-		);
+		this.assertRequiredValue(input.deviceId, 'The device identifier is required.');
 
-		this.assertRequiredValue(
-			input.deviceToken,
-			'The device token is required.'
-		);
+		this.assertRequiredValue(input.deviceToken, 'The device token is required.');
 
-		this.assertRequiredValue(
-			input.verificationId,
-			'The verification identifier is required.'
-		);
+		this.assertRequiredValue(input.verificationId, 'The verification identifier is required.');
 
-		this.assertRequiredValue(
-			input.browserToken,
-			'The browser verification token is required.'
-		);
+		this.assertRequiredValue(input.browserToken, 'The browser verification token is required.');
 
 		const identity = await this.identities.verify(input.idToken);
 
-		const verification =
-			await this.verifications.getBrowserMobileVerification({
+		const verification = await this.verifications.getBrowserMobileVerification({
 				userId: identity.userId,
 				verificationId: input.verificationId,
 				browserToken: input.browserToken,
@@ -380,17 +277,11 @@ class AuthenticationService {
 			});
 
 		if (verification.status === 'rejected') {
-			throw new AuthError(
-				'approval_rejected',
-				'The mobile authentication approval was rejected.'
-			);
+			throw new AuthError('approval_rejected', 'The mobile authentication approval was rejected.');
 		}
 
 		if (verification.status === 'pending') {
-			throw new AuthError(
-				'approval_not_ready',
-				'The mobile authentication approval is still pending.'
-			);
+			throw new AuthError('approval_not_ready', 'The mobile authentication approval is still pending.');
 		}
 
 		await this.verifications.complete({
@@ -414,9 +305,7 @@ class AuthenticationService {
 	 * @param input - Browser-bound verification and Firebase identity values.
 	 * @returns The updated verification state.
 	 */
-	readonly resendEmailVerification = async (
-		input: ManageEmailAuthenticationVerificationInput
-	): Promise<DeviceVerification> => {
+	readonly resendEmailVerification = async (input: ManageEmailAuthenticationVerificationInput): Promise<DeviceVerification> => {
 		const identity = await this.identities.verify(input.idToken);
 		const issued = await this.verifications.resendEmail({
 			userId: identity.userId,
@@ -474,9 +363,7 @@ class AuthenticationService {
 	 * @param input - Browser-bound verification and Firebase identity values.
 	 * @returns A promise resolved after cancellation.
 	 */
-	readonly cancelEmailVerification = async (
-		input: ManageEmailAuthenticationVerificationInput
-	): Promise<void> => {
+	readonly cancelEmailVerification = async (input: ManageEmailAuthenticationVerificationInput): Promise<void> => {
 		const identity = await this.identities.verify(input.idToken);
 
 		await this.verifications.cancelEmail({
@@ -494,10 +381,7 @@ class AuthenticationService {
 	 * @param message - Safe diagnostic message.
 	 * @throws {TypeError} When the value is empty.
 	 */
-	private readonly assertRequiredValue = (
-		value: string,
-		message: string
-	): void => {
+	private readonly assertRequiredValue = (value: string, message: string): void => {
 		if (!value.trim()) {
 			throw new TypeError(message);
 		}

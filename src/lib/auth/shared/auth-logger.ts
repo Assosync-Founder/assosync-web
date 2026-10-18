@@ -11,30 +11,18 @@ const DIAGNOSTIC_CODE_PATTERN = /^[A-Za-z0-9._/-]{1,128}$/;
  * @param error - Unknown server failure.
  * @returns A safe diagnostic code when available.
  */
-const resolveDiagnosticCode = (
-	error: unknown
-): string | number | null => {
-	if (
-		typeof error !== 'object' ||
-		error === null ||
-		!('code' in error)
-	) {
+const resolveDiagnosticCode = (error: unknown): string | number | null => {
+	if (typeof error !== 'object' || error === null || !('code' in error)) {
 		return null;
 	}
 
 	const code = error.code;
 
-	if (
-		typeof code === 'number' &&
-		Number.isSafeInteger(code)
-	) {
+	if (typeof code === 'number' && Number.isSafeInteger(code)) {
 		return code;
 	}
 
-	if (
-		typeof code === 'string' &&
-		DIAGNOSTIC_CODE_PATTERN.test(code)
-	) {
+	if (typeof code === 'string' && DIAGNOSTIC_CODE_PATTERN.test(code)) {
 		return code;
 	}
 
@@ -46,17 +34,12 @@ const resolveDiagnosticCode = (
  * @param request - Incoming request when available.
  * @returns A trusted correlation identifier.
  */
-const resolveAuthRequestId = (
-	request?: Request
-): string => {
+const resolveAuthRequestId = (request?: Request): string => {
 	const suppliedRequestId = request?.headers
 		.get('x-request-id')
 		?.trim();
 
-	if (
-		suppliedRequestId &&
-		REQUEST_ID_PATTERN.test(suppliedRequestId)
-	) {
+	if (suppliedRequestId && REQUEST_ID_PATTERN.test(suppliedRequestId)) {
 		return suppliedRequestId;
 	}
 
@@ -70,12 +53,7 @@ const resolveAuthRequestId = (
  * @param request - Incoming request when available.
  * @param requestId - Existing correlation identifier when already resolved.
  */
-const logAuthServerError = (
-	error: unknown,
-	operation: string,
-	request?: Request,
-	requestId = resolveAuthRequestId(request)
-): void => {
+const logAuthServerError = (error: unknown, operation: string, request?: Request, requestId = resolveAuthRequestId(request)): void => {
 	const errorName = error instanceof Error
 		? error.name
 		: 'UnknownError';

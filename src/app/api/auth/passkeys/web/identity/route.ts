@@ -1,10 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import {
-	assertAccountHostname,
-	createAuthErrorResponse,
-	readJsonBody,
-	readRequiredString
-} from '@/lib/auth/http/auth-http';
+import { assertAccountHostname, createAuthErrorResponse, readJsonBody, readRequiredString } from '@/lib/auth/http/auth-http';
 import webAuthorizationService from '@/lib/auth/web/authorization-server';
 
 /** Starts a confidential Web SSO flow whose primary proof is a passkey.
@@ -22,11 +17,7 @@ export const POST = async (request: NextRequest): Promise<Response> => {
 		const state = readRequiredString(body, 'state', 256);
 		const codeChallenge = readRequiredString(body, 'codeChallenge', 128);
 
-		webAuthorizationService.authenticateClient(
-			applicationId,
-			redirectUri,
-			clientSecret
-		);
+		webAuthorizationService.authenticateClient(applicationId, redirectUri, clientSecret);
 
 		const issued = await webAuthorizationService.issuePasskeyIdentityTicket({
 			applicationId,
@@ -36,13 +27,7 @@ export const POST = async (request: NextRequest): Promise<Response> => {
 			codeChallenge
 		});
 
-		return NextResponse.json(
-			{
-				identityTicket: issued.ticket,
-				expiresAt: issued.expiresAt.toISOString()
-			},
-			{ headers: { 'Cache-Control': 'no-store' } }
-		);
+		return NextResponse.json({ identityTicket: issued.ticket, expiresAt: issued.expiresAt.toISOString() }, { headers: { 'Cache-Control': 'no-store' } });
 	} catch (error: unknown) {
 		return createAuthErrorResponse(error, request, 'passkey_web_identity');
 	}

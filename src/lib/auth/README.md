@@ -140,7 +140,7 @@ passe au niveau suivant. `blockedUntil` est la source de vérité du délai acti
 
 - `rpName` : nom affiché par le navigateur ;
 - `rpId` : domaine WebAuthn, `account.assosync.fr` en production ;
-- `expectedOrigin` : origine exacte autorisée pour les réponses WebAuthn ;
+- `expectedOrigin` : origine Account exacte pour les cérémonies locales ;
 - `challengeLifetimeMs` : cinq minutes pour s’authentifier ou enregistrer une
   passkey.
 
@@ -148,6 +148,17 @@ Le `rpId` doit correspondre au domaine réellement utilisé. Une passkey créée
 pour `account.localhost` ne peut pas être utilisée sur le domaine de production.
 La synchronisation entre Chrome et Safari dépend du gestionnaire de passkeys
 utilisé par l’utilisateur ; elle n’est pas garantie par Assosync.
+
+En développement, les cérémonies hébergées par Calendis et Collectineo utilisent
+le RP ID `app.localhost`. Les ports `3001` et `3002` partagent donc les mêmes
+credentials locaux. Leur enregistrement doit être autorisé par le parcours
+d’inscription ou par les réglages Security d’Account. Les passkeys créées sur
+`account.localhost` restent séparées et ne sont jamais proposées au produit.
+
+Les produits peuvent réutiliser ce RP ID avec Related Origin Requests. Account
+publie uniquement les origines déclarées des clients dans
+`/.well-known/webauthn`. Le challenge mémorise le RP ID et l’origine exacte
+choisis lors de sa création ; la vérification refuse toute substitution.
 
 ### SSO Web
 
@@ -157,6 +168,7 @@ utilisé par l’utilisateur ; elle n’est pas garantie par Assosync.
 - sa page de connexion ;
 - son endpoint de relais flash ;
 - les URI de callback exactes autorisées ;
+- les origines WebAuthn exactes autorisées ;
 - son secret serveur confidentiel.
 
 Le secret doit contenir au moins 32 octets, ne doit exister que dans les
@@ -567,6 +579,8 @@ codes internes ; seule la page produit les transforme en message français.
 - `userVerification: required` ;
 - discoverable credential obligatoire pour la connexion sans email ;
 - challenges Redis à usage unique et liés au navigateur ;
+- RP ID et origine liés au challenge dès sa création ;
+- secrets des cérémonies produit conservés uniquement sur leurs serveurs ;
 - aucune clé privée ne traverse le réseau ;
 - clé publique, compteur et transports seulement sont stockés ;
 - compteur mis à jour après authentification réussie ;
@@ -622,7 +636,12 @@ coordonnées ne sont pas nécessaires au template.
 | --- | --- | --- |
 | `POST /api/auth/web/identity` | Serveur produit | Émet un ticket d’identité après email/password ou OAuth Firebase. |
 | `POST /api/auth/passkeys/web/identity` | Serveur produit | Émet un ticket d’identité sans utilisateur pour une passkey. |
+| `POST /api/auth/passkeys/web/options` | Serveur produit | Crée une autorisation locale au produit et ses options WebAuthn. |
+| `POST /api/auth/passkeys/web/verify` | Serveur produit | Vérifie une assertion produite sur l’origine enregistrée. |
+| `POST /api/auth/passkeys/web/bind` | Serveur produit | Lie l’ID token et émet une reprise Account à usage unique. |
+| `POST /api/auth/passkeys/web/fallback` | Serveur produit | Émet une reprise vers la cérémonie Account pour un navigateur incompatible. |
 | `GET /api/auth/web/authorize` | Navigateur | Consomme le ticket et initialise l’autorisation liée au navigateur. |
+| `GET /api/auth/web/resume` | Navigateur | Consomme une reprise et installe le secret dans un cookie Account. |
 | `GET /api/auth/web/continue` | Navigateur | Lance ou reprend le contrôle de l’appareil. |
 | `POST /api/auth/web/token` | Serveur produit | Échange le grant SSO contre la session du produit. |
 | `GET /api/auth/passkeys/options` | Page Account passkey | Émet les options WebAuthn. |
@@ -779,10 +798,12 @@ codes email, tokens Redis ou secrets client dans un ticket de support.
 ### Ordre de diagnostic d’un parcours Web
 
 1. Vérifier que le produit a bien obtenu un ID token Firebase.
-2. Vérifier l’appel serveur produit vers `/api/auth/web/identity` ou
-   `/api/auth/passkeys/web/identity`.
-3. Vérifier le redirect vers `Account /api/auth/web/authorize`.
-4. Vérifier le cookie Account `webAuthorization`.
+2. Pour email/OAuth, vérifier `/api/auth/web/identity`. Pour une passkey locale,
+   vérifier successivement `/passkeys/web/options`, `/verify` et `/bind`.
+3. Vérifier le redirect vers `Account /api/auth/web/authorize` ou
+   `/api/auth/web/resume`.
+4. Vérifier le cookie Account `webAuthorization`, créé seulement au moment de
+   la reprise du contrôle d’appareil.
 5. Vérifier `/api/auth/web/continue` : appareil connu ou URL
    `/confirm-device`.
 6. En cas de nouveau navigateur, vérifier la clé Redis de vérification puis la

@@ -1,23 +1,19 @@
 import 'server-only';
 
-import {
-	createHash,
-	timingSafeEqual
-} from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import AuthError from '@/lib/auth/shared/auth-error';
-import {
-	secureTokenGenerator,
-	sha256TokenHasher,
-	systemClock
-} from '@/lib/auth/shared/runtime-server';
+import { secureTokenGenerator, sha256TokenHasher, systemClock } from '@/lib/auth/shared/runtime-server';
 import type {
 	BeginWebAuthorizationInput,
+	BeginPasskeyWebAuthorizationInput,
 	Clock,
 	CompletedWebAuthorization,
 	CompleteWebAuthorizationInput,
 	ExchangeWebAuthorizationInput,
 	IssuedSession,
+	IssuedPasskeyWebAuthorization,
 	IssuedWebAuthorizationIdentityTicket,
+	IssuedWebAuthorizationHandoff,
 	IssuedWebAuthorizationRequest,
 	IssueWebAuthorizationIdentityInput,
 	IssuePasskeyWebAuthorizationIdentityInput,
@@ -38,17 +34,14 @@ const MAXIMUM_STATE_LENGTH = 256;
  * @param issued - Issued application session.
  * @returns Serializable session credentials.
  */
-const toStoredIssuedSession = (
-	issued: IssuedSession
-): StoredIssuedSession => {
+const toStoredIssuedSession = (issued: IssuedSession): StoredIssuedSession => {
 	return {
 		session: {
 			...issued.session,
 			createdAt: issued.session.createdAt.toISOString(),
 			expiresAt: issued.session.expiresAt.toISOString(),
 			lastSeenAt: issued.session.lastSeenAt.toISOString(),
-			revokedAt:
-				issued.session.revokedAt?.toISOString() ?? null
+			revokedAt: issued.session.revokedAt?.toISOString() ?? null
 		},
 		sessionToken: issued.sessionToken,
 		firebaseSessionCookie: issued.firebaseSessionCookie
@@ -60,16 +53,11 @@ const toStoredIssuedSession = (
  * @returns Parsed date.
  * @throws {AuthError} When the value is invalid.
  */
-const parseSessionDate = (
-	value: string
-): Date => {
+const parseSessionDate = (value: string): Date => {
 	const date = new Date(value);
 
 	if (Number.isNaN(date.getTime())) {
-		throw new AuthError(
-			'authorization_invalid',
-			'The Web authorization session is invalid.'
-		);
+		throw new AuthError('authorization_invalid', 'The Web authorization session is invalid.');
 	}
 
 	return date;
@@ -79,18 +67,14 @@ const parseSessionDate = (
  * @param stored - Stored session credentials.
  * @returns Issued application session.
  */
-const fromStoredIssuedSession = (
-	stored: StoredIssuedSession
-): IssuedSession => {
+const fromStoredIssuedSession = (stored: StoredIssuedSession): IssuedSession => {
 	return {
 		session: {
 			...stored.session,
 			createdAt: parseSessionDate(stored.session.createdAt),
 			expiresAt: parseSessionDate(stored.session.expiresAt),
 			lastSeenAt: parseSessionDate(stored.session.lastSeenAt),
-			revokedAt: stored.session.revokedAt
-				? parseSessionDate(stored.session.revokedAt)
-				: null
+			revokedAt: stored.session.revokedAt ? parseSessionDate(stored.session.revokedAt): null
 		},
 		sessionToken: stored.sessionToken,
 		firebaseSessionCookie: stored.firebaseSessionCookie
@@ -101,9 +85,7 @@ const fromStoredIssuedSession = (
  * @param verifier - PKCE verifier.
  * @returns Base64url-encoded SHA-256 challenge.
  */
-const createCodeChallenge = (
-	verifier: string
-): string => {
+const createCodeChallenge = (verifier: string): string => {
 	return createHash('sha256')
 		.update(verifier, 'ascii')
 		.digest('base64url');
@@ -114,10 +96,7 @@ const createCodeChallenge = (
  * @param expected - Configured secret.
  * @returns Whether both secrets match.
  */
-const secretsMatch = (
-	actual: string,
-	expected: string
-): boolean => {
+const secretsMatch = (actual: string, expected: string): boolean => {
 	const actualDigest = createHash('sha256')
 		.update(actual, 'utf8')
 		.digest();
@@ -137,32 +116,14 @@ class WebAuthorizationService {
 	 * @param tokenGenerator - Opaque token generator.
 	 * @param tokenHasher - Secret hashing adapter.
 	 */
-	constructor(
-		private readonly repository: WebAuthorizationRepository,
-		private readonly options: WebSsoServiceOptions,
-		private readonly clock: Clock = systemClock,
-		private readonly tokenGenerator: TokenGenerator = secureTokenGenerator,
-		private readonly tokenHasher: TokenHasher = sha256TokenHasher
-	) {
-		if (
-			!Number.isSafeInteger(options.requestLifetimeMs) ||
-			options.requestLifetimeMs <= 0 ||
-			!Number.isSafeInteger(options.codeLifetimeMs) ||
-			options.codeLifetimeMs <= 0
-		) {
-			throw new RangeError(
-				'Web authorization lifetimes must be positive integers.'
-			);
+	constructor(private readonly repository: WebAuthorizationRepository, private readonly options: WebSsoServiceOptions, private readonly clock: Clock = systemClock, private readonly tokenGenerator: TokenGenerator = secureTokenGenerator, private readonly tokenHasher: TokenHasher = sha256TokenHasher) {
+		if (!Number.isSafeInteger(options.requestLifetimeMs) || options.requestLifetimeMs <= 0 || !Number.isSafeInteger(options.codeLifetimeMs) || options.codeLifetimeMs <= 0) {
+			throw new RangeError('Web authorization lifetimes must be positive integers.');
 		}
 
 		for (const client of options.clients) {
-			if (
-				client.clientSecret !== undefined &&
-				Buffer.byteLength(client.clientSecret, 'utf8') < 32
-			) {
-				throw new TypeError(
-					`The ${ client.id } Web SSO secret must contain at least 32 bytes.`
-				);
+			if (client.clientSecret !== undefined && Buffer.byteLength(client.clientSecret, 'utf8') <32) {
+				throw new TypeError(`The ${ client.id } Web SSO secret must contain at least 32 bytes.`);
 			}
 		}
 	}
@@ -173,48 +134,40 @@ class WebAuthorizationService {
 	 * @param clientSecret - Supplied server-side client secret.
 	 * @returns Nothing after successful client authentication.
 	 */
-	readonly authenticateClient = (
-		applicationId: string,
-		redirectUri: string,
-		clientSecret: string
-	): void => {
-		this.resolveConfidentialClient(
-			applicationId,
-			redirectUri,
-			clientSecret
-		);
+	readonly authenticateClient = (applicationId: string, redirectUri: string, clientSecret: string): void => {
+		this.resolveConfidentialClient(applicationId, redirectUri, clientSecret);
+	};
+
+	/** Authenticates a client and resolves one exact allowed passkey origin.
+	 * @param applicationId - Registered Web client identifier.
+	 * @param redirectUri - Exact registered callback URL.
+	 * @param clientSecret - Supplied server-side client secret.
+	 * @param passkeyOrigin - Browser origin requesting the WebAuthn ceremony.
+	 * @returns The exact registered passkey origin.
+	 */
+	readonly authenticatePasskeyClient = (applicationId: string, redirectUri: string, clientSecret: string, passkeyOrigin: string): string => {
+		const client = this.resolveConfidentialClient(applicationId, redirectUri, clientSecret);
+
+		if (!client.passkeyOrigins.includes(passkeyOrigin)) {
+			throw new AuthError('authorization_invalid', 'The WebAuthn origin is not registered for this client.');
+		}
+
+		return passkeyOrigin;
 	};
 
 	/** Creates a short-lived identity handoff for an authenticated Web client.
 	 * @param input - Confidential client and verified Firebase identity.
 	 * @returns An opaque single-use identity ticket.
 	 */
-	readonly issueIdentityTicket = async (
-		input: IssueWebAuthorizationIdentityInput
-	): Promise<IssuedWebAuthorizationIdentityTicket> => {
-		const client = this.resolveConfidentialClient(
-			input.applicationId,
-			input.redirectUri,
-			input.clientSecret
-		);
+	readonly issueIdentityTicket = async (input: IssueWebAuthorizationIdentityInput): Promise<IssuedWebAuthorizationIdentityTicket> => {
+		const client = this.resolveConfidentialClient(input.applicationId, input.redirectUri, input.clientSecret);
 
-		if (
-			!input.idToken.trim() ||
-			!input.userId.trim() ||
-			!input.state ||
-			input.state.length > MAXIMUM_STATE_LENGTH ||
-			!PKCE_CHALLENGE_PATTERN.test(input.codeChallenge)
-		) {
-			throw new AuthError(
-				'identity_invalid',
-				'The Firebase identity is invalid.'
-			);
+		if (!input.idToken.trim() || !input.userId.trim() || !input.state || input.state.length > MAXIMUM_STATE_LENGTH || !PKCE_CHALLENGE_PATTERN.test(input.codeChallenge)) {
+			throw new AuthError('identity_invalid', 'The Firebase identity is invalid.');
 		}
 
 		const now = this.clock.now();
-		const expiresAt = new Date(
-			now.getTime() + this.options.requestLifetimeMs
-		);
+		const expiresAt = new Date(now.getTime() + this.options.requestLifetimeMs);
 		const ticket = this.tokenGenerator.generate();
 		const ticketHash = this.tokenHasher.hash(ticket);
 
@@ -242,30 +195,15 @@ class WebAuthorizationService {
 	 * @param input - Confidential client and PKCE transaction.
 	 * @returns An opaque single-use identity ticket.
 	 */
-	readonly issuePasskeyIdentityTicket = async (
-		input: IssuePasskeyWebAuthorizationIdentityInput
-	): Promise<IssuedWebAuthorizationIdentityTicket> => {
-		const client = this.resolveConfidentialClient(
-			input.applicationId,
-			input.redirectUri,
-			input.clientSecret
-		);
+	readonly issuePasskeyIdentityTicket = async (input: IssuePasskeyWebAuthorizationIdentityInput): Promise<IssuedWebAuthorizationIdentityTicket> => {
+		const client = this.resolveConfidentialClient(input.applicationId, input.redirectUri, input.clientSecret);
 
-		if (
-			!input.state ||
-			input.state.length > MAXIMUM_STATE_LENGTH ||
-			!PKCE_CHALLENGE_PATTERN.test(input.codeChallenge)
-		) {
-			throw new AuthError(
-				'identity_invalid',
-				'The passkey identity is invalid.'
-			);
+		if (!input.state || input.state.length > MAXIMUM_STATE_LENGTH || !PKCE_CHALLENGE_PATTERN.test(input.codeChallenge)) {
+			throw new AuthError('identity_invalid', 'The passkey identity is invalid.');
 		}
 
 		const now = this.clock.now();
-		const expiresAt = new Date(
-			now.getTime() + this.options.requestLifetimeMs
-		);
+		const expiresAt = new Date(now.getTime() + this.options.requestLifetimeMs);
 		const ticket = this.tokenGenerator.generate();
 
 		await this.repository.createIdentityTicket({
@@ -291,23 +229,11 @@ class WebAuthorizationService {
 	 * @param userId - Firebase user owning the verified passkey.
 	 * @returns Nothing after the request is updated.
 	 */
-	readonly bindPasskeyUser = async (
-		requestId: string,
-		browserToken: string,
-		userId: string
-	): Promise<void> => {
-		const updated = await this.repository.bindPasskeyUser(
-			requestId,
-			this.tokenHasher.hash(browserToken),
-			userId,
-			this.clock.now().toISOString()
-		);
+	readonly bindPasskeyUser = async (requestId: string, browserToken: string, userId: string): Promise<void> => {
+		const updated = await this.repository.bindPasskeyUser(requestId, this.tokenHasher.hash(browserToken), userId, this.clock.now().toISOString());
 
 		if (!updated) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The passkey authorization is invalid or expired.'
-			);
+			throw new AuthError('authorization_invalid', 'The passkey authorization is invalid or expired.');
 		}
 	};
 
@@ -318,25 +244,11 @@ class WebAuthorizationService {
 	 * @param idToken - Fresh Firebase ID token.
 	 * @returns Nothing after the request is updated.
 	 */
-	readonly bindPasskeyIdentityToken = async (
-		requestId: string,
-		browserToken: string,
-		userId: string,
-		idToken: string
-	): Promise<void> => {
-		const updated = await this.repository.bindIdentityToken(
-			requestId,
-			this.tokenHasher.hash(browserToken),
-			userId,
-			idToken,
-			this.clock.now().toISOString()
-		);
+	readonly bindPasskeyIdentityToken = async (requestId: string, browserToken: string, userId: string, idToken: string): Promise<void> => {
+		const updated = await this.repository.bindIdentityToken(requestId, this.tokenHasher.hash(browserToken), userId, idToken, this.clock.now().toISOString());
 
 		if (!updated) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The passkey authorization is invalid or expired.'
-			);
+			throw new AuthError('authorization_invalid', 'The passkey authorization is invalid or expired.');
 		}
 	};
 
@@ -344,36 +256,19 @@ class WebAuthorizationService {
 	 * @param input - Validated public authorization parameters.
 	 * @returns Issued request and browser continuation token.
 	 */
-	readonly begin = async (
-		input: BeginWebAuthorizationInput
-	): Promise<IssuedWebAuthorizationRequest> => {
+	readonly begin = async (input: BeginWebAuthorizationInput): Promise<IssuedWebAuthorizationRequest> => {
 		if (!input.identityTicket.trim()) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The Web authorization request is invalid.'
-			);
+			throw new AuthError('authorization_invalid', 'The Web authorization request is invalid.');
 		}
 
 		const now = this.clock.now();
-		const identityTicket =
-			await this.repository.consumeIdentityTicket({
-				ticketHash: this.tokenHasher.hash(
-					input.identityTicket
-				),
-				consumedAt: now.toISOString()
-			});
+		const identityTicket = await this.repository.consumeIdentityTicket({ ticketHash: this.tokenHasher.hash(input.identityTicket), consumedAt: now.toISOString() });
 
 		if (!identityTicket) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The Web identity ticket is invalid or expired.'
-			);
+			throw new AuthError('authorization_invalid', 'The Web identity ticket is invalid or expired.');
 		}
 
-		const client = this.resolveClient(
-			identityTicket.applicationId,
-			identityTicket.redirectUri
-		);
+		const client = this.resolveClient(identityTicket.applicationId, identityTicket.redirectUri);
 
 		const browserToken = this.tokenGenerator.generate();
 		const request: WebAuthorizationRequest = {
@@ -396,27 +291,101 @@ class WebAuthorizationService {
 		};
 	};
 
+	/** Begins a server-bound authorization for a product-hosted passkey ceremony.
+	 * @param input - Confidential client, PKCE transaction, and browser origin.
+	 * @returns The persisted authorization and its server-only continuation token.
+	 */
+	readonly beginPasskey = async (input: BeginPasskeyWebAuthorizationInput): Promise<IssuedPasskeyWebAuthorization> => {
+		const passkeyOrigin = this.authenticatePasskeyClient(input.applicationId, input.redirectUri, input.clientSecret, input.passkeyOrigin);
+
+		if (!input.state || input.state.length > MAXIMUM_STATE_LENGTH || !PKCE_CHALLENGE_PATTERN.test(input.codeChallenge)) {
+			throw new AuthError('identity_invalid', 'The passkey identity is invalid.');
+		}
+
+		const now = this.clock.now();
+		const browserToken = this.tokenGenerator.generate();
+		const request: WebAuthorizationRequest = {
+			id: this.tokenGenerator.generate(),
+			applicationId: this.resolveApplicationId(input.applicationId),
+			redirectUri: input.redirectUri,
+			state: input.state,
+			codeChallenge: input.codeChallenge,
+			browserTokenHash: this.tokenHasher.hash(browserToken),
+			identity: {
+				userId: null,
+				idToken: null
+			},
+			createdAt: now,
+			expiresAt: new Date(now.getTime() + this.options.requestLifetimeMs)
+		};
+
+		await this.repository.createRequest(request);
+
+		return {
+			request,
+			browserToken,
+			passkeyOrigin
+		};
+	};
+
+	/** Issues a short-lived ticket that transfers a server-bound authorization to Account.
+	 * @param requestId - Active authorization request identifier.
+	 * @param browserToken - Server-held authorization secret.
+	 * @returns A single-use browser handoff ticket.
+	 */
+	readonly issueHandoff = async (requestId: string, browserToken: string): Promise<IssuedWebAuthorizationHandoff> => {
+		const request = await this.resolve(requestId, browserToken);
+		const now = this.clock.now();
+		const expiresAt = new Date(Math.min(request.expiresAt.getTime(), now.getTime() + this.options.codeLifetimeMs));
+		const ticket = this.tokenGenerator.generate();
+
+		await this.repository.createHandoff({
+			ticketHash: this.tokenHasher.hash(ticket),
+			requestId,
+			browserToken,
+			expiresAt: expiresAt.toISOString()
+		});
+
+		return { ticket, expiresAt };
+	};
+
+	/** Consumes a browser handoff and resolves its still-active authorization.
+	 * @param ticket - Opaque single-use handoff ticket.
+	 * @returns The authorization and raw token to install in the Account cookie.
+	 */
+	readonly consumeHandoff = async (ticket: string): Promise<IssuedWebAuthorizationRequest> => {
+		if (!ticket.trim()) {
+			throw new AuthError('authorization_invalid', 'The Web authorization handoff is invalid.');
+		}
+
+		const handoff = await this.repository.consumeHandoff({
+			ticketHash: this.tokenHasher.hash(ticket),
+			consumedAt: this.clock.now().toISOString()
+		});
+
+		if (!handoff) {
+			throw new AuthError('authorization_invalid', 'The Web authorization handoff is invalid or expired.');
+		}
+
+		const request = await this.resolve(handoff.requestId, handoff.browserToken);
+
+		return {
+			request,
+			browserToken: handoff.browserToken
+		};
+	};
+
 	/** Resolves an active request bound to the Account browser.
 	 * @param requestId - Opaque request identifier.
 	 * @param browserToken - Raw continuation cookie.
 	 * @returns Active authorization request.
 	 * @throws {AuthError} When the request is absent or expired.
 	 */
-	readonly resolve = async (
-		requestId: string,
-		browserToken: string
-	): Promise<WebAuthorizationRequest> => {
-		const request = await this.repository.findRequest(
-			requestId,
-			this.tokenHasher.hash(browserToken),
-			this.clock.now()
-		);
+	readonly resolve = async (requestId: string, browserToken: string): Promise<WebAuthorizationRequest> => {
+		const request = await this.repository.findRequest(requestId, this.tokenHasher.hash(browserToken), this.clock.now());
 
 		if (!request) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The Web authorization request is invalid or expired.'
-			);
+			throw new AuthError('authorization_invalid', 'The Web authorization request is invalid or expired.');
 		}
 
 		return request;
@@ -426,43 +395,26 @@ class WebAuthorizationService {
 	 * @param input - Browser-bound request and issued application session.
 	 * @returns The registered callback destination.
 	 */
-	readonly complete = async (
-		input: CompleteWebAuthorizationInput
-	): Promise<CompletedWebAuthorization> => {
-		const request = await this.resolve(
-			input.requestId,
-			input.browserToken
-		);
+	readonly complete = async (input: CompleteWebAuthorizationInput): Promise<CompletedWebAuthorization> => {
+		const request = await this.resolve(input.requestId, input.browserToken);
 
-		if (
-			input.issuedSession.session.applicationId !==
-				request.applicationId ||
-			input.issuedSession.session.userId !==
-				request.identity.userId
-		) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The application session does not match the authorization request.'
-			);
+		if (input.issuedSession.session.applicationId !== request.applicationId || input.issuedSession.session.userId !== request.identity.userId) {
+			throw new AuthError('authorization_invalid', 'The application session does not match the authorization request.');
 		}
 
 		const now = this.clock.now();
-		const expiresAt = new Date(
-			now.getTime() + this.options.codeLifetimeMs
-		);
+		const expiresAt = new Date(now.getTime() + this.options.codeLifetimeMs);
 
 		const completed = await this.repository.completeRequest({
 			requestId: request.id,
-			browserTokenHash:
-				this.tokenHasher.hash(input.browserToken),
+			browserTokenHash: this.tokenHasher.hash(input.browserToken),
 			completedAt: now.toISOString(),
 			grant: {
 				applicationId: request.applicationId,
 				redirectUri: request.redirectUri,
 				codeChallenge: request.codeChallenge,
 				state: request.state,
-				issuedSession:
-					toStoredIssuedSession(input.issuedSession),
+				issuedSession: toStoredIssuedSession(input.issuedSession),
 				createdAt: now.toISOString(),
 				expiresAt: expiresAt.toISOString()
 			},
@@ -470,10 +422,7 @@ class WebAuthorizationService {
 		});
 
 		if (!completed) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The Web authorization request could not be completed.'
-			);
+			throw new AuthError('authorization_invalid', 'The Web authorization request could not be completed.');
 		}
 
 		return {
@@ -485,25 +434,14 @@ class WebAuthorizationService {
 	 * @param input - Client authentication, callback, state, and PKCE verifier.
 	 * @returns One-time application session credentials.
 	 */
-	readonly exchange = async (
-		input: ExchangeWebAuthorizationInput
-	): Promise<IssuedSession> => {
-		const client = this.resolveConfidentialClient(
-			input.applicationId,
-			input.redirectUri,
-			input.clientSecret
-		);
+	readonly exchange = async (input: ExchangeWebAuthorizationInput): Promise<IssuedSession> => {
+		const client = this.resolveConfidentialClient(input.applicationId, input.redirectUri, input.clientSecret);
 
 		if (!PKCE_VERIFIER_PATTERN.test(input.codeVerifier)) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The PKCE verifier is invalid.'
-			);
+			throw new AuthError('authorization_invalid', 'The PKCE verifier is invalid.');
 		}
 
-		const codeChallenge = createCodeChallenge(
-			input.codeVerifier
-		);
+		const codeChallenge = createCodeChallenge(input.codeVerifier);
 		const grant = await this.repository.consumeGrant({
 			applicationId: client.id,
 			redirectUri: input.redirectUri,
@@ -513,10 +451,7 @@ class WebAuthorizationService {
 		});
 
 		if (!grant) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The Web authorization grant is invalid or expired.'
-			);
+			throw new AuthError('authorization_invalid', 'The Web authorization grant is invalid or expired.');
 		}
 
 		return fromStoredIssuedSession(grant.issuedSession);
@@ -528,25 +463,32 @@ class WebAuthorizationService {
 	 * @returns Matching client.
 	 * @throws {AuthError} When the client or callback is not registered.
 	 */
-	private readonly resolveClient = (
-		applicationId: string,
-		redirectUri: string
-	): WebSsoClient => {
+	private readonly resolveClient = (applicationId: string, redirectUri: string): WebSsoClient => {
 		const client = this.options.clients.find((candidate) => {
 			return candidate.id === applicationId;
 		});
 
-		if (
-			!client ||
-			!client.redirectUris.includes(redirectUri)
-		) {
-			throw new AuthError(
-				'authorization_invalid',
-				'The Web client or callback URI is invalid.'
-			);
+		if (!client || !client.redirectUris.includes(redirectUri)) {
+			throw new AuthError('authorization_invalid', 'The Web client or callback URI is invalid.');
 		}
 
 		return client;
+	};
+
+	/** Resolves one supported Web application identifier.
+	 * @param applicationId - Untrusted application identifier.
+	 * @returns Registered application identifier.
+	 */
+	private readonly resolveApplicationId = (applicationId: string): WebSsoClient['id'] => {
+		const client = this.options.clients.find((candidate) => {
+			return candidate.id === applicationId;
+		});
+
+		if (!client) {
+			throw new AuthError('authorization_invalid', 'The Web client is invalid.');
+		}
+
+		return client.id;
 	};
 
 	/** Resolves and authenticates a confidential Web client.
@@ -556,24 +498,11 @@ class WebAuthorizationService {
 	 * @returns Authenticated client.
 	 * @throws {AuthError} When the client authentication is invalid.
 	 */
-	private readonly resolveConfidentialClient = (
-		applicationId: string,
-		redirectUri: string,
-		clientSecret: string
-	): WebSsoClient => {
-		const client = this.resolveClient(
-			applicationId,
-			redirectUri
-		);
+	private readonly resolveConfidentialClient = (applicationId: string, redirectUri: string, clientSecret: string): WebSsoClient => {
+		const client = this.resolveClient(applicationId, redirectUri);
 
-		if (
-			!client.clientSecret ||
-			!secretsMatch(clientSecret, client.clientSecret)
-		) {
-			throw new AuthError(
-				'client_invalid',
-				'The Web client authentication is invalid.'
-			);
+		if (!client.clientSecret || !secretsMatch(clientSecret, client.clientSecret)) {
+			throw new AuthError('client_invalid', 'The Web client authentication is invalid.');
 		}
 
 		return client;

@@ -1,18 +1,7 @@
-import {
-	NextRequest,
-	NextResponse
-} from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import deviceManagementService from '@/lib/auth/device/device-management-server';
-import {
-	clearSessionCookies
-} from '@/lib/auth/http/auth-cookies';
-import {
-	assertSameOrigin,
-	createAuthErrorResponse,
-	readAuthenticationIdentifier,
-	readJsonBody,
-	readRequiredNullableString
-} from '@/lib/auth/http/auth-http';
+import { clearSessionCookies } from '@/lib/auth/http/auth-cookies';
+import { assertSameOrigin, createAuthErrorResponse, readAuthenticationIdentifier, readJsonBody, readRequiredNullableString } from '@/lib/auth/http/auth-http';
 import resolveAccountRequestSession from '@/lib/auth/http/auth-request-session';
 import type { DeviceRouteContext } from '@/types/auth';
 
@@ -21,10 +10,7 @@ import type { DeviceRouteContext } from '@/types/auth';
  * @param context - Dynamic device route context.
  * @returns The renamed public device.
  */
-export const PATCH = async (
-	request: NextRequest,
-	context: DeviceRouteContext
-): Promise<Response> => {
+export const PATCH = async (request: NextRequest, context: DeviceRouteContext): Promise<Response> => {
 	try {
 		assertSameOrigin(request);
 
@@ -34,22 +20,11 @@ export const PATCH = async (
 			context.params
 		]);
 
-		const displayName = readRequiredNullableString(
-			body,
-			'displayName',
-			120
-		);
+		const displayName = readRequiredNullableString(body, 'displayName', 120);
 
-		const deviceId = readAuthenticationIdentifier(
-			parameters.deviceId
-		);
+		const deviceId = readAuthenticationIdentifier(parameters.deviceId);
 
-		const device = await deviceManagementService.rename(
-			session.userId,
-			deviceId,
-			displayName,
-			session.deviceId
-		);
+		const device = await deviceManagementService.rename(session.userId, deviceId, displayName, session.deviceId);
 
 		return NextResponse.json({ device });
 	} catch (error: unknown) {
@@ -62,10 +37,7 @@ export const PATCH = async (
  * @param context - Dynamic device route context.
  * @returns The revoked device and affected session count.
  */
-export const DELETE = async (
-	request: NextRequest,
-	context: DeviceRouteContext
-): Promise<Response> => {
+export const DELETE = async (request: NextRequest, context: DeviceRouteContext): Promise<Response> => {
 	try {
 		assertSameOrigin(request);
 
@@ -74,15 +46,9 @@ export const DELETE = async (
 			context.params
 		]);
 
-		const deviceId = readAuthenticationIdentifier(
-			parameters.deviceId
-		);
+		const deviceId = readAuthenticationIdentifier(parameters.deviceId);
 
-		const result = await deviceManagementService.revoke(
-			session.userId,
-			deviceId,
-			session.deviceId
-		);
+		const result = await deviceManagementService.revoke(session.userId, deviceId, session.deviceId);
 
 		const response = NextResponse.json(result);
 

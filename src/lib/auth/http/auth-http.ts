@@ -3,10 +3,7 @@ import 'server-only';
 import { NextResponse } from 'next/server';
 import authConfig from '@/config/auth';
 import { clearSessionCookies } from '@/lib/auth/http/auth-cookies';
-import {
-	logAuthServerError,
-	resolveAuthRequestId
-} from '@/lib/auth/shared/auth-logger';
+import { logAuthServerError, resolveAuthRequestId } from '@/lib/auth/shared/auth-logger';
 import AuthError from '@/lib/auth/shared/auth-error';
 import type { DeviceVerificationMode } from '@/types/auth';
 import type { PasskeyRelyingParty } from '@/types/passkey';
@@ -25,9 +22,7 @@ const ACCOUNT_HOSTNAMES = new Set([
  * @returns Host value including its optional port.
  * @throws {AuthHttpError} When no valid host can be resolved.
  */
-const resolveRequestHost = (
-	request: Request
-): string => {
+const resolveRequestHost = (request: Request): string => {
 	const requestUrl = new URL(request.url);
 	const forwardedHost = request.headers
 		.get('x-forwarded-host')
@@ -45,11 +40,7 @@ const resolveRequestHost = (
 		throw new AuthHttpError(403, 'origin_invalid');
 	}
 
-	if (
-		parsedHost.username ||
-		parsedHost.password ||
-		parsedHost.pathname !== '/'
-	) {
+	if (parsedHost.username || parsedHost.password || parsedHost.pathname !== '/') {
 		throw new AuthHttpError(403, 'origin_invalid');
 	}
 
@@ -62,10 +53,7 @@ const resolveRequestHost = (
  * @returns The non-empty cookie value.
  * @throws {AuthHttpError} When the cookie is absent.
  */
-const readRequiredAuthCookie = (
-	value: string | undefined,
-	errorCode: string
-): string => {
+const readRequiredAuthCookie = (value: string | undefined, errorCode: string): string => {
 	if (!value) {
 		throw new AuthHttpError(400, errorCode);
 	}
@@ -78,9 +66,7 @@ const readRequiredAuthCookie = (
  * @returns Normalized public origin.
  * @throws {AuthHttpError} When proxy values are invalid.
  */
-const resolveRequestOrigin = (
-	request: Request
-): string => {
+const resolveRequestOrigin = (request: Request): string => {
 	const requestUrl = new URL(request.url);
 	const forwardedProtocol = request.headers
 		.get('x-forwarded-proto')
@@ -92,9 +78,7 @@ const resolveRequestOrigin = (
 		: requestUrl.protocol.slice(0, -1);
 
 	try {
-		return new URL(
-			`${ protocol }://${ resolveRequestHost(request) }`
-		).origin;
+		return new URL(`${ protocol }://${ resolveRequestHost(request) }`).origin;
 	} catch {
 		throw new AuthHttpError(403, 'origin_invalid');
 	}
@@ -104,12 +88,8 @@ const resolveRequestOrigin = (
  * @param request - Incoming request.
  * @returns Lowercase hostname without its port.
  */
-const resolveRequestHostname = (
-	request: Request
-): string => {
-	return new URL(
-		`http://${ resolveRequestHost(request) }`
-	).hostname.toLowerCase();
+const resolveRequestHostname = (request: Request): string => {
+	return new URL(`http://${ resolveRequestHost(request) }`).hostname.toLowerCase();
 };
 
 /** Represents a safe error produced by the authentication HTTP boundary. */
@@ -119,10 +99,7 @@ class AuthHttpError extends Error {
 	 * @param status - HTTP response status.
 	 * @param code - Stable public error code.
 	 */
-	constructor(
-		public readonly status: number,
-		public readonly code: string
-	) {
+	constructor(public readonly status: number, public readonly code: string) {
 		super(code);
 
 		this.name = 'AuthHttpError';
@@ -134,9 +111,7 @@ class AuthHttpError extends Error {
  * @param value - Value to inspect.
  * @returns Whether the value is a string-keyed record.
  */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
@@ -150,33 +125,17 @@ const isRecord = (
  * @returns The parsed object.
  * @throws {AuthHttpError} When the request body is invalid.
  */
-const readJsonBody = async (
-	request: Request
-): Promise<Record<string, unknown>> => {
-	const contentType =
-		request.headers.get('content-type');
+const readJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
+	const contentType = request.headers.get('content-type');
 
-	if (
-		!contentType
-			?.toLowerCase()
-			.includes('application/json')
-	) {
-		throw new AuthHttpError(
-			415,
-			'content_type_invalid'
-		);
+	if (!contentType?.toLowerCase().includes('application/json')) {
+		throw new AuthHttpError(415, 'content_type_invalid');
 	}
 
 	const rawBody = await request.text();
 
-	if (
-		!rawBody ||
-		rawBody.length > MAXIMUM_BODY_LENGTH
-	) {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+	if (!rawBody || rawBody.length > MAXIMUM_BODY_LENGTH) {
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	let parsedBody: unknown;
@@ -184,17 +143,11 @@ const readJsonBody = async (
 	try {
 		parsedBody = JSON.parse(rawBody);
 	} catch {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	if (!isRecord(parsedBody)) {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	return parsedBody;
@@ -208,22 +161,11 @@ const readJsonBody = async (
  * @returns The validated string.
  * @throws {AuthHttpError} When the property is missing or invalid.
  */
-const readRequiredString = (
-	record: Record<string, unknown>,
-	property: string,
-	maximumLength = MAXIMUM_REQUIRED_STRING_LENGTH
-): string => {
+const readRequiredString = (record: Record<string, unknown>, property: string, maximumLength = MAXIMUM_REQUIRED_STRING_LENGTH): string => {
 	const value = record[property];
 
-	if (
-		typeof value !== 'string' ||
-		!value.trim() ||
-		value.length > maximumLength
-	) {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+	if (typeof value !== 'string' || !value.trim() || value.length > maximumLength) {
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	return value;
@@ -235,17 +177,9 @@ const readRequiredString = (
  * @returns The validated base64url-compatible identifier.
  * @throws {AuthHttpError} When the identifier is invalid.
  */
-const readAuthenticationIdentifier = (
-	value: unknown
-): string => {
-	if (
-		typeof value !== 'string' ||
-		!AUTHENTICATION_IDENTIFIER_PATTERN.test(value)
-	) {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+const readAuthenticationIdentifier = (value: unknown): string => {
+	if (typeof value !== 'string' || !AUTHENTICATION_IDENTIFIER_PATTERN.test(value)) {
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	return value;
@@ -259,37 +193,21 @@ const readAuthenticationIdentifier = (
  * @returns The normalized value or null.
  * @throws {AuthHttpError} When the property is invalid.
  */
-const readOptionalString = (
-	record: Record<string, unknown>,
-	property: string,
-	maximumLength: number
-): string | null => {
+const readOptionalString = (record: Record<string, unknown>, property: string, maximumLength: number): string | null => {
 	const value = record[property];
 
-	if (
-		value === undefined ||
-		value === null
-	) {
+	if (value === undefined || value === null) {
 		return null;
 	}
 
 	if (typeof value !== 'string') {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	const normalizedValue = value.trim();
 
-	if (
-		!normalizedValue ||
-		normalizedValue.length > maximumLength
-	) {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+	if (!normalizedValue || normalizedValue.length > maximumLength) {
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	return normalizedValue;
@@ -302,10 +220,7 @@ const readOptionalString = (
  * @returns The selected verification mode when supplied.
  * @throws {AuthHttpError} When the mode is unsupported.
  */
-const readOptionalDeviceVerificationMode = (
-	record: Record<string, unknown>,
-	property: string
-): DeviceVerificationMode | undefined => {
+const readOptionalDeviceVerificationMode = (record: Record<string, unknown>, property: string): DeviceVerificationMode | undefined => {
 	const value = record[property];
 
 	if (value === undefined) {
@@ -327,16 +242,9 @@ const readOptionalDeviceVerificationMode = (
  * @returns The normalized string or null.
  * @throws {AuthHttpError} When the property is missing or invalid.
  */
-const readRequiredNullableString = (
-	record: Record<string, unknown>,
-	property: string,
-	maximumLength: number
-): string | null => {
+const readRequiredNullableString = (record: Record<string, unknown>, property: string, maximumLength: number): string | null => {
 	if (!Object.hasOwn(record, property)) {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	const value = record[property];
@@ -346,22 +254,13 @@ const readRequiredNullableString = (
 	}
 
 	if (typeof value !== 'string') {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	const normalizedValue = value.trim();
 
-	if (
-		!normalizedValue ||
-		normalizedValue.length > maximumLength
-	) {
-		throw new AuthHttpError(
-			400,
-			'request_invalid'
-		);
+	if (!normalizedValue || normalizedValue.length > maximumLength) {
+		throw new AuthHttpError(400, 'request_invalid');
 	}
 
 	return normalizedValue;
@@ -372,16 +271,11 @@ const readRequiredNullableString = (
  * @param request - Incoming mutation request.
  * @throws {AuthHttpError} When the origin is missing or differs.
  */
-const assertSameOrigin = (
-	request: Request
-): void => {
+const assertSameOrigin = (request: Request): void => {
 	const origin = request.headers.get('origin');
 
 	if (!origin) {
-		throw new AuthHttpError(
-			403,
-			'origin_invalid'
-		);
+		throw new AuthHttpError(403, 'origin_invalid');
 	}
 
 	let originUrl: URL;
@@ -389,17 +283,11 @@ const assertSameOrigin = (
 	try {
 		originUrl = new URL(origin);
 	} catch {
-		throw new AuthHttpError(
-			403,
-			'origin_invalid'
-		);
+		throw new AuthHttpError(403, 'origin_invalid');
 	}
 
 	if (originUrl.origin !== resolveRequestOrigin(request)) {
-		throw new AuthHttpError(
-			403,
-			'origin_invalid'
-		);
+		throw new AuthHttpError(403, 'origin_invalid');
 	}
 };
 
@@ -408,16 +296,11 @@ const assertSameOrigin = (
  * @param request - Incoming account request.
  * @throws {AuthHttpError} When the hostname is not an account hostname.
  */
-const assertAccountHostname = (
-	request: Request
-): void => {
+const assertAccountHostname = (request: Request): void => {
 	const hostname = resolveRequestHostname(request);
 
 	if (!ACCOUNT_HOSTNAMES.has(hostname)) {
-		throw new AuthHttpError(
-			403,
-			'application_invalid'
-		);
+		throw new AuthHttpError(403, 'application_invalid');
 	}
 };
 
@@ -426,18 +309,13 @@ const assertAccountHostname = (
  * @returns Exact relying-party values for the current origin.
  * @throws {AuthHttpError} When the origin is not an allowed Account origin.
  */
-const resolvePasskeyRelyingParty = (
-	request: Request
-): PasskeyRelyingParty => {
+const resolvePasskeyRelyingParty = (request: Request): PasskeyRelyingParty => {
 	assertAccountHostname(request);
 
 	const hostname = resolveRequestHostname(request);
 	const origin = resolveRequestOrigin(request);
 
-	if (
-		hostname === authConfig.passkey.rpId &&
-		origin === authConfig.passkey.expectedOrigin
-	) {
+	if (hostname === authConfig.passkey.rpId && origin === authConfig.passkey.expectedOrigin) {
 		return {
 			id: authConfig.passkey.rpId,
 			origin: authConfig.passkey.expectedOrigin
@@ -453,13 +331,10 @@ const resolvePasskeyRelyingParty = (
  * @returns The trusted application identifier.
  * @throws {AuthHttpError} When the hostname is unsupported.
  */
-const resolveApplicationId = (
-	request: Request
-): string => {
+const resolveApplicationId = (request: Request): string => {
 	const hostname = resolveRequestHostname(request);
 
-	const application =
-		authConfig.applications.find((candidate) => {
+	const application = authConfig.applications.find((candidate) => {
 			return candidate.hostnames.some(
 				(candidateHostname) => {
 					return (
@@ -470,10 +345,7 @@ const resolveApplicationId = (
 		});
 
 	if (!application) {
-		throw new AuthHttpError(
-			403,
-			'application_invalid'
-		);
+		throw new AuthHttpError(403, 'application_invalid');
 	}
 
 	return application.id;
@@ -484,9 +356,7 @@ const resolveApplicationId = (
  * @param error - Authentication error.
  * @returns The associated HTTP status.
  */
-const getAuthErrorStatus = (
-	error: AuthError
-): number => {
+const getAuthErrorStatus = (error: AuthError): number => {
 	switch (error.code) {
 		case 'account_disabled':
 		case 'approval_rejected':
@@ -524,16 +394,9 @@ const getAuthErrorStatus = (
  * @param operation - Stable server operation used for diagnostics.
  * @returns A response containing no private diagnostic value.
  */
-const createAuthErrorResponse = (
-	error: unknown,
-	request?: Request,
-	operation = 'auth_http_response'
-): NextResponse => {
+const createAuthErrorResponse = (error: unknown, request?: Request, operation = 'auth_http_response'): NextResponse => {
 	const requestId = resolveAuthRequestId(request);
-	const headers = new Headers({
-		'Cache-Control': 'no-store',
-		'X-Request-Id': requestId
-	});
+	const headers = new Headers({ 'Cache-Control': 'no-store', 'X-Request-Id': requestId });
 
 	if (error instanceof AuthHttpError) {
 		const response = NextResponse.json(
@@ -558,21 +421,13 @@ const createAuthErrorResponse = (
 		const retryAfterSeconds = error.retryAfterSeconds;
 
 		if (retryAfterSeconds !== null) {
-			headers.set(
-				'Retry-After',
-				retryAfterSeconds.toString()
-			);
+			headers.set('Retry-After', retryAfterSeconds.toString());
 		} else if (status === 503) {
 			headers.set('Retry-After', '5');
 		}
 
 		if (status >= 500) {
-			logAuthServerError(
-				error,
-				operation,
-				request,
-				requestId
-			);
+			logAuthServerError(error, operation, request, requestId);
 		}
 
 		const response = NextResponse.json(
@@ -588,23 +443,14 @@ const createAuthErrorResponse = (
 			}
 		);
 
-		if (
-			error.code === 'session_expired' ||
-			error.code === 'session_invalid' ||
-			error.code === 'session_revoked'
-		) {
+		if (error.code === 'session_expired' || error.code === 'session_invalid' || error.code === 'session_revoked') {
 			clearSessionCookies(response);
 		}
 
 		return response;
 	}
 
-	logAuthServerError(
-		error,
-		operation,
-		request,
-		requestId
-	);
+	logAuthServerError(error, operation, request, requestId);
 
 	return NextResponse.json(
 		{

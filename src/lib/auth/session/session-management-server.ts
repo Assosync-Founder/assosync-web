@@ -4,8 +4,6 @@ import SessionManagementService from '@/lib/auth/session/session-management-serv
 import sessionService from '@/lib/auth/session/session-server';
 
 /** Shared server-side account session management service. */
-const sessionManagementService = new SessionManagementService(
-	sessionService
-);
+const sessionManagementService = new SessionManagementService(sessionService);
 
 export default sessionManagementService;

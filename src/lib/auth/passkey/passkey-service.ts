@@ -1,23 +1,10 @@
 import 'server-only';
 
-import {
-	generateAuthenticationOptions,
-	generateRegistrationOptions,
-	verifyAuthenticationResponse,
-	verifyRegistrationResponse
-} from '@simplewebauthn/server';
+import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from '@simplewebauthn/server';
 import authConfig from '@/config/auth';
 import AuthError from '@/lib/auth/shared/auth-error';
-import {
-	secureTokenGenerator,
-	sha256TokenHasher,
-	systemClock
-} from '@/lib/auth/shared/runtime-server';
-import type {
-	Clock,
-	TokenGenerator,
-	TokenHasher
-} from '@/types/auth';
+import { secureTokenGenerator, sha256TokenHasher, systemClock } from '@/lib/auth/shared/runtime-server';
+import type { Clock, TokenGenerator, TokenHasher } from '@/types/auth';
 import type {
 	AccountPasskey,
 	IssuedPasskeyAuthenticationOptions,
@@ -30,9 +17,7 @@ import type {
 	VerifyPasskeyRegistrationInput
 } from '@/types/passkey';
 
-const isAuthenticatorTransport = (
-	value: string
-): value is 'ble' | 'hybrid' | 'internal' | 'nfc' | 'usb' => {
+const isAuthenticatorTransport = (value: string): value is 'ble' | 'hybrid' | 'internal' | 'nfc' | 'usb' => {
 	return (
 		value === 'ble' ||
 		value === 'hybrid' ||
@@ -62,21 +47,13 @@ class PasskeyService {
 	 * @param tokens - Secure token generator.
 	 * @param hasher - Browser-token hashing adapter.
 	 */
-	constructor(
-		private readonly passkeys: PasskeyRepository,
-		private readonly challenges: PasskeyChallengeRepository,
-		private readonly clock: Clock = systemClock,
-		private readonly tokens: TokenGenerator = secureTokenGenerator,
-		private readonly hasher: TokenHasher = sha256TokenHasher
-	) {}
+	constructor(private readonly passkeys: PasskeyRepository, private readonly challenges: PasskeyChallengeRepository, private readonly clock: Clock = systemClock, private readonly tokens: TokenGenerator = secureTokenGenerator, private readonly hasher: TokenHasher = sha256TokenHasher) {}
 
 	/** Lists public passkey metadata for Account security settings.
 	 * @param userId - Firebase account owner.
 	 * @returns Passkeys without credential identifiers or public keys.
 	 */
-	readonly list = async (
-		userId: string
-	): Promise<readonly AccountPasskey[]> => {
+	readonly list = async (userId: string): Promise<readonly AccountPasskey[]> => {
 		const passkeys = await this.passkeys.listByUser(userId);
 
 		return passkeys.map(toAccountPasskey);
@@ -89,25 +66,14 @@ class PasskeyService {
 	 * @returns Updated public passkey metadata.
 	 * @throws {AuthError} When the passkey does not belong to the account.
 	 */
-	readonly rename = async (
-		userId: string,
-		passkeyId: string,
-		displayName: string
-	): Promise<AccountPasskey> => {
+	readonly rename = async (userId: string, passkeyId: string, displayName: string): Promise<AccountPasskey> => {
 		const passkey = await this.passkeys.findById(userId, passkeyId);
 
 		if (!passkey) {
-			throw new AuthError(
-				'webauthn_credential_invalid',
-				'The passkey credential is invalid.'
-			);
+			throw new AuthError('webauthn_credential_invalid', 'The passkey credential is invalid.');
 		}
 
-		await this.passkeys.updateDisplayName(
-			userId,
-			passkeyId,
-			displayName
-		);
+		await this.passkeys.updateDisplayName(userId, passkeyId, displayName);
 
 		return toAccountPasskey({
 			...passkey,
@@ -121,17 +87,11 @@ class PasskeyService {
 	 * @returns A promise resolved after permanent deletion.
 	 * @throws {AuthError} When the passkey does not belong to the account.
 	 */
-	readonly delete = async (
-		userId: string,
-		passkeyId: string
-	): Promise<void> => {
+	readonly delete = async (userId: string, passkeyId: string): Promise<void> => {
 		const passkey = await this.passkeys.findById(userId, passkeyId);
 
 		if (!passkey) {
-			throw new AuthError(
-				'webauthn_credential_invalid',
-				'The passkey credential is invalid.'
-			);
+			throw new AuthError('webauthn_credential_invalid', 'The passkey credential is invalid.');
 		}
 
 		await this.passkeys.delete(userId, passkeyId);
@@ -144,12 +104,7 @@ class PasskeyService {
 	 * @param relyingParty - Exact trusted WebAuthn relying party.
 	 * @returns Registration options and one-time challenge identifier.
 	 */
-	readonly createRegistrationOptions = async (
-		userId: string,
-		email: string,
-		browserToken: string,
-		relyingParty: PasskeyRelyingParty
-	): Promise<IssuedPasskeyRegistrationOptions> => {
+	readonly createRegistrationOptions = async (userId: string, email: string, browserToken: string, relyingParty: PasskeyRelyingParty): Promise<IssuedPasskeyRegistrationOptions> => {
 		const existing = await this.passkeys.listByUser(userId);
 		const webauthnUserId = existing[0]?.webauthnUserId ??
 			this.tokens.generate();
@@ -177,6 +132,8 @@ class PasskeyService {
 			id: challengeId,
 			purpose: 'registration',
 			challenge: options.challenge,
+			relyingPartyId: relyingParty.id,
+			relyingPartyOrigin: relyingParty.origin,
 			userId,
 			authorizationId: null,
 			browserTokenHash: this.hasher.hash(browserToken),
@@ -192,26 +149,11 @@ class PasskeyService {
 	 * @param relyingParty - Exact trusted WebAuthn relying party.
 	 * @returns The persisted credential.
 	 */
-	readonly verifyRegistration = async (
-		input: VerifyPasskeyRegistrationInput,
-		relyingParty: PasskeyRelyingParty
-	) => {
-		const challenge = await this.challenges.consume(
-			input.challengeId,
-			this.hasher.hash(input.browserToken),
-			'registration',
-			this.clock.now()
-		);
+	readonly verifyRegistration = async (input: VerifyPasskeyRegistrationInput, relyingParty: PasskeyRelyingParty) => {
+		const challenge = await this.challenges.consume(input.challengeId, this.hasher.hash(input.browserToken), 'registration', this.clock.now());
 
-		if (
-			!challenge ||
-			challenge.userId !== input.userId ||
-			!challenge.webauthnUserId
-		) {
-			throw new AuthError(
-				'webauthn_challenge_invalid',
-				'The passkey registration challenge is invalid.'
-			);
+		if (!challenge || challenge.userId !== input.userId || !challenge.webauthnUserId || challenge.relyingPartyId !== relyingParty.id || challenge.relyingPartyOrigin !== relyingParty.origin) {
+			throw new AuthError('webauthn_challenge_invalid', 'The passkey registration challenge is invalid.');
 		}
 
 		const verification = await verifyRegistrationResponse({
@@ -223,22 +165,14 @@ class PasskeyService {
 		});
 
 		if (!verification.verified || !verification.registrationInfo) {
-			throw new AuthError(
-				'webauthn_credential_invalid',
-				'The passkey registration response is invalid.'
-			);
+			throw new AuthError('webauthn_credential_invalid', 'The passkey registration response is invalid.');
 		}
 
 		const info = verification.registrationInfo;
-		const duplicate = await this.passkeys.findByCredentialIdGlobally(
-			info.credential.id
-		);
+		const duplicate = await this.passkeys.findByCredentialIdGlobally(info.credential.id);
 
 		if (duplicate) {
-			throw new AuthError(
-				'webauthn_credential_invalid',
-				'The passkey is already registered.'
-			);
+			throw new AuthError('webauthn_credential_invalid', 'The passkey is already registered.');
 		}
 
 		return this.passkeys.create({
@@ -262,21 +196,16 @@ class PasskeyService {
 	 * @param relyingParty - Exact trusted WebAuthn relying party.
 	 * @returns Authentication options and challenge identifier.
 	 */
-	readonly createAuthenticationOptions = async (
-		authorizationId: string,
-		browserToken: string,
-		relyingParty: PasskeyRelyingParty
-	): Promise<IssuedPasskeyAuthenticationOptions> => {
-		const options = await generateAuthenticationOptions({
-			rpID: relyingParty.id,
-			userVerification: 'required'
-		});
+	readonly createAuthenticationOptions = async (authorizationId: string, browserToken: string, relyingParty: PasskeyRelyingParty): Promise<IssuedPasskeyAuthenticationOptions> => {
+		const options = await generateAuthenticationOptions({ rpID: relyingParty.id, userVerification: 'required' });
 		const challengeId = this.tokens.generate();
 
 		await this.challenges.create({
 			id: challengeId,
 			purpose: 'authentication',
 			challenge: options.challenge,
+			relyingPartyId: relyingParty.id,
+			relyingPartyOrigin: relyingParty.origin,
 			userId: null,
 			authorizationId,
 			browserTokenHash: this.hasher.hash(browserToken),
@@ -292,36 +221,17 @@ class PasskeyService {
 	 * @param relyingParty - Exact trusted WebAuthn relying party.
 	 * @returns Verified Firebase user identifier.
 	 */
-	readonly verifyAuthentication = async (
-		input: VerifyPasskeyAuthenticationInput,
-		relyingParty: PasskeyRelyingParty
-	): Promise<string> => {
-		const challenge = await this.challenges.consume(
-			input.challengeId,
-			this.hasher.hash(input.browserToken),
-			'authentication',
-			this.clock.now()
-		);
+	readonly verifyAuthentication = async (input: VerifyPasskeyAuthenticationInput, relyingParty: PasskeyRelyingParty): Promise<string> => {
+		const challenge = await this.challenges.consume(input.challengeId, this.hasher.hash(input.browserToken), 'authentication', this.clock.now());
 
-		if (
-			!challenge ||
-			challenge.authorizationId !== input.authorizationId
-		) {
-			throw new AuthError(
-				'webauthn_challenge_invalid',
-				'The passkey authentication challenge is invalid.'
-			);
+		if (!challenge || challenge.authorizationId !== input.authorizationId || challenge.relyingPartyId !== relyingParty.id || challenge.relyingPartyOrigin !== relyingParty.origin) {
+			throw new AuthError('webauthn_challenge_invalid', 'The passkey authentication challenge is invalid.');
 		}
 
-		const passkey = await this.passkeys.findByCredentialIdGlobally(
-			input.response.id
-		);
+		const passkey = await this.passkeys.findByCredentialIdGlobally(input.response.id);
 
 		if (!passkey) {
-			throw new AuthError(
-				'webauthn_credential_invalid',
-				'The passkey credential is invalid.'
-			);
+			throw new AuthError('webauthn_credential_invalid', 'The passkey credential is invalid.');
 		}
 
 		const verification = await verifyAuthenticationResponse({
@@ -332,35 +242,23 @@ class PasskeyService {
 			requireUserVerification: true,
 			credential: {
 				id: passkey.credentialId,
-				publicKey: new Uint8Array(
-					Buffer.from(passkey.publicKey, 'base64url')
-				),
+				publicKey: new Uint8Array(Buffer.from(passkey.publicKey, 'base64url')),
 				counter: passkey.counter,
 				transports: [...passkey.transports]
 			}
 		});
 
 		if (!verification.verified) {
-			throw new AuthError(
-				'webauthn_credential_invalid',
-				'The passkey assertion is invalid.'
-			);
+			throw new AuthError('webauthn_credential_invalid', 'The passkey assertion is invalid.');
 		}
 
-		await this.passkeys.updateCounter(
-			passkey.userId,
-			passkey.id,
-			verification.authenticationInfo.newCounter,
-			this.clock.now()
-		);
+		await this.passkeys.updateCounter(passkey.userId, passkey.id, verification.authenticationInfo.newCounter, this.clock.now());
 
 		return passkey.userId;
 	};
 
 	private readonly expiresAt = (): Date => {
-		return new Date(
-			this.clock.now().getTime() + authConfig.passkey.challengeLifetimeMs
-		);
+		return new Date(this.clock.now().getTime() + authConfig.passkey.challengeLifetimeMs);
 	};
 }
 

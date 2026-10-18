@@ -17,6 +17,25 @@ redis.call('DEL', KEYS[1])
 return raw
 `;
 
+/** Atomically validates and consumes a single-use browser handoff. */
+export const consumeWebAuthorizationHandoffScript = `
+local raw = redis.call('GET', KEYS[1])
+
+if not raw then
+	return false
+end
+
+local handoff = cjson.decode(raw)
+
+if ARGV[1] >= handoff.expiresAt then
+	return false
+end
+
+redis.call('DEL', KEYS[1])
+
+return raw
+`;
+
 /** Atomically replaces a browser authorization request with a short-lived grant. */
 export const completeWebAuthorizationScript = `
 local raw = redis.call('GET', KEYS[1])

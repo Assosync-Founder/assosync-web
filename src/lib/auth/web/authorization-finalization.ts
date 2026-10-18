@@ -3,18 +3,13 @@ import 'server-only';
 import sessionService from '@/lib/auth/session/session-server';
 import { logAuthServerError } from '@/lib/auth/shared/auth-logger';
 import webAuthorizationService from '@/lib/auth/web/authorization-server';
-import type {
-	FinalizedWebAuthorization,
-	FinalizeWebAuthorizationInput
-} from '@/types/auth';
+import type { FinalizedWebAuthorization, FinalizeWebAuthorizationInput } from '@/types/auth';
 
 /** Finalizes Web authorization and establishes the parallel Account session.
  * @param input - Browser-bound request and newly issued session.
  * @returns The registered callback destination and Account session.
  */
-const finalizeWebAuthorization = async (
-	input: FinalizeWebAuthorizationInput
-): Promise<FinalizedWebAuthorization> => {
+const finalizeWebAuthorization = async (input: FinalizeWebAuthorizationInput): Promise<FinalizedWebAuthorization> => {
 	let accountSession:
 		FinalizedWebAuthorization['accountSession'] | null = null;
 
@@ -42,14 +37,10 @@ const finalizeWebAuthorization = async (
 				await sessionService.revoke({
 					userId: issuedSession.session.userId,
 					sessionId: issuedSession.session.id,
-					applicationId:
-						issuedSession.session.applicationId
+					applicationId: issuedSession.session.applicationId
 				});
 			} catch (cleanupError: unknown) {
-				logAuthServerError(
-					cleanupError,
-					'web_authorization_session_cleanup'
-				);
+				logAuthServerError(cleanupError, 'web_authorization_session_cleanup');
 			}
 		}
 

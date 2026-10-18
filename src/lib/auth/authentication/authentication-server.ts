@@ -5,14 +5,10 @@ import AuthenticationService from '@/lib/auth/authentication/authentication-serv
 import deviceService from '@/lib/auth/device/device-server';
 import mobileApprovalService from '@/lib/auth/mobile/approval/approval-server';
 import sessionService from '@/lib/auth/session/session-server';
-import {
-	verificationEmailService,
-	verificationService
-} from '@/lib/auth/verification/verification-server';
+import { verificationEmailService, verificationService } from '@/lib/auth/verification/verification-server';
 
 /** Shared server-side authentication workflow. */
-const authenticationService =
-	new AuthenticationService(
+const authenticationService = new AuthenticationService(
 		authenticationIdentityProvider,
 		deviceService,
 		verificationService,

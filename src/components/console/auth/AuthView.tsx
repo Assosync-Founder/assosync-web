@@ -3,10 +3,7 @@
 import { useRef, useState } from 'react';
 import type { KeyboardEvent, SyntheticEvent } from 'react';
 import type { AuthViewProps, TerminalEntry } from '@/types/console';
-import {
-	createAuthenticationProgressMessages, wait, isValidEmailAddress,
-	LOGIN_HISTORY_KEY, AUTHENTICATION_PROGRESS_DELAY_MILLISECONDS
-} from '@/components/console/auth/terminal';
+import { createAuthenticationProgressMessages, wait, isValidEmailAddress, LOGIN_HISTORY_KEY, AUTHENTICATION_PROGRESS_DELAY_MILLISECONDS } from '@/components/console/auth/terminal';
 import '@/components/console/auth/terminal.css';
 
 /**
@@ -40,10 +37,7 @@ const AuthView = ({ loginDate }: AuthViewProps) => {
 	 * @param kind - Kind of terminal line to append.
 	 * @param content - Text displayed on the line.
 	 */
-	const appendHistoryEntry = (
-		kind: TerminalEntry['kind'],
-		content: string
-	) => {
+	const appendHistoryEntry = (kind: TerminalEntry['kind'], content: string) => {
 		const entry: TerminalEntry = {
 			id: crypto.randomUUID(),
 			kind,
@@ -99,10 +93,7 @@ const AuthView = ({ loginDate }: AuthViewProps) => {
 
 			if (!isValidEmailAddress(email)) {
 				appendHistoryEntry('command', normalizedCommand);
-				appendHistoryEntry(
-					'output',
-					`login: invalid email address: ${ email || '<empty>' }`
-				);
+				appendHistoryEntry('output', `login: invalid email address: ${ email || '<empty>' }`);
 				setCommand('');
 
 				return;
@@ -193,10 +184,7 @@ const AuthView = ({ loginDate }: AuthViewProps) => {
 			return;
 		}
 
-		appendHistoryEntry(
-			'output',
-			'authentication cancelled: maximum attempts reached'
-		);
+		appendHistoryEntry('output', 'authentication cancelled: maximum attempts reached');
 		setPasswordAttemptCount(0);
 		setIsPasswordPromptVisible(false);
 	};
@@ -226,16 +214,12 @@ const AuthView = ({ loginDate }: AuthViewProps) => {
 	 * Submits the active terminal prompt.
 	 * @param event - Form submission event.
 	 */
-	const handleSubmit = async (
-		event: SyntheticEvent<HTMLFormElement, SubmitEvent>
-	) => {
+	const handleSubmit = async (event: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
 		event.preventDefault();
 
 		if (isPasswordPromptVisible) {
 			if (user.password.length === 0) {
-				handlePasswordFailure(
-					'authentication failed: password is required'
-				);
+				handlePasswordFailure('authentication failed: password is required');
 
 				return;
 			}

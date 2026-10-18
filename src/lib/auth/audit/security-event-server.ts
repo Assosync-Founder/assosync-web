@@ -5,15 +5,9 @@ import createSecurityEventRepository from '@/lib/auth/audit/security-event-repos
 import SecurityEventService from '@/lib/auth/audit/security-event-service';
 import firestoreServer from '@/services/firestore/firestore-server';
 
-const securityEventRepository =
-	createSecurityEventRepository(firestoreServer);
+const securityEventRepository = createSecurityEventRepository(firestoreServer);
 
 /** Shared server-side security-event recorder. */
-const securityEventService = new SecurityEventService(
-	securityEventRepository,
-	{
-		retentionMs: authConfig.securityEvent.retentionMs
-	}
-);
+const securityEventService = new SecurityEventService(securityEventRepository, { retentionMs: authConfig.securityEvent.retentionMs });
 
 export default securityEventService;

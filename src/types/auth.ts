@@ -1,9 +1,6 @@
 import type { Rest } from '@assosync/firestore';
 import type { Mailer, SentMail } from '@assosync/email';
-import type {
-	FirebaseCloudMessagingBatchResult,
-	FirebaseCloudMessagingNotification
-} from '@/types/firebase';
+import type { FirebaseCloudMessagingBatchResult, FirebaseCloudMessagingNotification } from '@/types/firebase';
 
 /** Error codes exposed by the authentication domain. */
 export type AuthErrorCode =
@@ -85,10 +82,7 @@ export type VerificationCodeHasher = {
 	 * @param verificationId - Unique verification identifier.
 	 * @returns The encoded keyed digest.
 	 */
-	hash: (
-		code: string,
-		verificationId: string
-	) => string;
+	hash: (code: string, verificationId: string) => string;
 };
 
 /** Supported SameSite policies for authentication cookies. */
@@ -251,9 +245,7 @@ export type DeviceRepository = {
 	 * @param device - Device to persist.
 	 * @returns The persisted device.
 	 */
-	readonly create: (
-		device: CreateDeviceInput
-	) => Promise<Device>;
+	readonly create: (device: CreateDeviceInput) => Promise<Device>;
 
 	/**
 	 * Finds an account device from its hashed cookie token.
@@ -261,10 +253,7 @@ export type DeviceRepository = {
 	 * @param tokenHash - Hash of the device cookie token.
 	 * @returns The matching device or null.
 	 */
-	readonly findByTokenHash: (
-		userId: string,
-		tokenHash: string
-	) => Promise<Device | null>;
+	readonly findByTokenHash: (userId: string, tokenHash: string) => Promise<Device | null>;
 
 	/**
 	 * Finds a device from its internal identifier.
@@ -272,28 +261,21 @@ export type DeviceRepository = {
 	 * @param deviceId - Internal device identifier.
 	 * @returns The matching device or null.
 	 */
-	readonly findById: (
-		userId: string,
-		deviceId: string
-	) => Promise<Device | null>;
+	readonly findById: (userId: string, deviceId: string) => Promise<Device | null>;
 
 	/**
 	 * Lists every device owned by an account.
 	 * @param userId - Firebase user owning the device collection.
 	 * @returns The account devices.
 	 */
-	readonly listByUser: (
-		userId: string
-	) => Promise<readonly Device[]>;
+	readonly listByUser: (userId: string) => Promise<readonly Device[]>;
 
 	/**
 	 * Updates a complete device record.
 	 * @param device - Device state to persist.
 	 * @returns The updated device.
 	 */
-	readonly update: (
-		device: Device
-	) => Promise<Device>;
+	readonly update: (device: Device) => Promise<Device>;
 
 	/**
 	 * Atomically verifies a pending device or returns its verified state.
@@ -304,13 +286,7 @@ export type DeviceRepository = {
 	 * @param expiresAt - Trusted-device expiration time.
 	 * @returns The verified device or null when the transition is invalid.
 	 */
-	readonly verifyPending: (
-		userId: string,
-		deviceId: string,
-		applicationId: string,
-		verifiedAt: Date,
-		expiresAt: Date
-	) => Promise<Device | null>;
+	readonly verifyPending: (userId: string, deviceId: string, applicationId: string, verifiedAt: Date, expiresAt: Date) => Promise<Device | null>;
 
 	/**
 	 * Atomically updates the last-seen time of a verified device.
@@ -319,11 +295,7 @@ export type DeviceRepository = {
 	 * @param seenAt - Successful use time.
 	 * @returns The updated device or null when it is no longer trusted.
 	 */
-	readonly touchVerified: (
-		userId: string,
-		deviceId: string,
-		seenAt: Date
-	) => Promise<Device | null>;
+	readonly touchVerified: (userId: string, deviceId: string, seenAt: Date) => Promise<Device | null>;
 
 	/**
 	 * Atomically renames an active device.
@@ -332,11 +304,7 @@ export type DeviceRepository = {
 	 * @param displayName - Normalized user-facing label.
 	 * @returns The renamed device or null when it cannot be changed.
 	 */
-	readonly rename: (
-		userId: string,
-		deviceId: string,
-		displayName: string | null
-	) => Promise<Device | null>;
+	readonly rename: (userId: string, deviceId: string, displayName: string | null) => Promise<Device | null>;
 
 	/**
 	 * Atomically revokes a device.
@@ -345,11 +313,7 @@ export type DeviceRepository = {
 	 * @param revokedAt - Revocation time.
 	 * @returns The revoked device or null when it does not exist.
 	 */
-	readonly revoke: (
-		userId: string,
-		deviceId: string,
-		revokedAt: Date
-	) => Promise<Device | null>;
+	readonly revoke: (userId: string, deviceId: string, revokedAt: Date) => Promise<Device | null>;
 };
 
 /** Public account representation of a browser device. */
@@ -439,9 +403,7 @@ export type SecurityEventRepository = {
 	 * @param event - Complete event to persist.
 	 * @returns A promise resolved after persistence.
 	 */
-	readonly create: (
-		event: CreateSecurityEventInput
-	) => Promise<void>;
+	readonly create: (event: CreateSecurityEventInput) => Promise<void>;
 };
 
 /** Security-event retention settings. */
@@ -557,9 +519,7 @@ export type MobileInstallationRepository = {
 	 * @param mobileInstallation - Complete mobile installation state.
 	 * @returns The persisted mobile installation.
 	 */
-	readonly upsert: (
-		mobileInstallation: MobileInstallation
-	) => Promise<MobileInstallation>;
+	readonly upsert: (mobileInstallation: MobileInstallation) => Promise<MobileInstallation>;
 
 	/**
 	 * Finds a mobile installation owned by an account.
@@ -567,19 +527,14 @@ export type MobileInstallationRepository = {
 	 * @param mobileInstallationId - Mobile installation identifier.
 	 * @returns The matching mobile installation or null.
 	 */
-	readonly findById: (
-		userId: string,
-		mobileInstallationId: string
-	) => Promise<MobileInstallation | null>;
+	readonly findById: (userId: string, mobileInstallationId: string) => Promise<MobileInstallation | null>;
 
 	/**
 	 * Lists active mobile installations available for authentication approval.
 	 * @param userId - Firebase user owning the mobile installations.
 	 * @returns The active mobile installations.
 	 */
-	readonly listActiveByUser: (
-		userId: string
-	) => Promise<readonly MobileInstallation[]>;
+	readonly listActiveByUser: (userId: string) => Promise<readonly MobileInstallation[]>;
 
 	/**
 	 * Disables a mobile installation atomically.
@@ -588,11 +543,7 @@ export type MobileInstallationRepository = {
 	 * @param disabledAt - Disable time.
 	 * @returns The disabled mobile installation or null.
 	 */
-	readonly disable: (
-		userId: string,
-		mobileInstallationId: string,
-		disabledAt: Date
-	) => Promise<MobileInstallation | null>;
+	readonly disable: (userId: string, mobileInstallationId: string, disabledAt: Date) => Promise<MobileInstallation | null>;
 };
 
 /** Input used to notify every active mobile installation owned by an account. */
@@ -1050,108 +1001,84 @@ export type DeviceVerificationRepository = {
 	 * @param verification - Verification to persist.
 	 * @returns The persisted verification.
 	 */
-	readonly create: (
-		verification: DeviceVerification
-	) => Promise<DeviceVerification>;
+	readonly create: (verification: DeviceVerification) => Promise<DeviceVerification>;
 
 	/**
 	 * Checks an email code and increments failures atomically.
 	 * @param input - Bound email code attempt.
 	 * @returns The atomic attempt result.
 	 */
-	readonly attemptEmailCode: (
-		input: EmailCodeAttemptInput
-	) => Promise<EmailCodeAttemptResult>;
+	readonly attemptEmailCode: (input: EmailCodeAttemptInput) => Promise<EmailCodeAttemptResult>;
 
 	/**
 	 * Replaces an email verification code atomically.
 	 * @param input - Bound replacement code request.
 	 * @returns The atomic replacement outcome.
 	 */
-	readonly resendEmailCode: (
-		input: ResendEmailCodeInput
-	) => Promise<ResendEmailCodeResult>;
+	readonly resendEmailCode: (input: ResendEmailCodeInput) => Promise<ResendEmailCodeResult>;
 
 	/**
 	 * Commits a successfully delivered replacement email code.
 	 * @param input - Bound resend transition.
 	 * @returns Whether the matching reservation was completed.
 	 */
-	readonly completeEmailCodeResend: (
-		input: EmailCodeResendTransitionInput
-	) => Promise<boolean>;
+	readonly completeEmailCodeResend: (input: EmailCodeResendTransitionInput) => Promise<boolean>;
 
 	/**
 	 * Restores the previous email code after delivery failure.
 	 * @param input - Bound resend transition.
 	 * @returns Whether the matching reservation was rolled back.
 	 */
-	readonly rollbackEmailCodeResend: (
-		input: EmailCodeResendTransitionInput
-	) => Promise<boolean>;
+	readonly rollbackEmailCodeResend: (input: EmailCodeResendTransitionInput) => Promise<boolean>;
 
 	/**
 	 * Cancels an email verification atomically.
 	 * @param input - Bound cancellation request.
 	 * @returns Whether a matching verification was removed.
 	 */
-	readonly cancelEmail: (
-		input: CancelEmailVerificationRepositoryInput
-	) => Promise<boolean>;
+	readonly cancelEmail: (input: CancelEmailVerificationRepositoryInput) => Promise<boolean>;
 
 	/**
 	 * Approves a pending mobile verification atomically.
 	 * @param input - Bound mobile approval.
 	 * @returns The approved verification or null.
 	 */
-	readonly approveMobile: (
-		input: MobileApprovalInput
-	) => Promise<DeviceVerification | null>;
+	readonly approveMobile: (input: MobileApprovalInput) => Promise<DeviceVerification | null>;
 
 	/**
 	 * Resolves a pending mobile verification using its approval secret.
 	 * @param input - Bound mobile approval lookup.
 	 * @returns The matching verification or null.
 	 */
-	readonly resolveMobileApproval: (
-		input: ResolveMobileApprovalInput
-	) => Promise<DeviceVerification | null>;
+	readonly resolveMobileApproval: (input: ResolveMobileApprovalInput) => Promise<DeviceVerification | null>;
 
 	/**
 	 * Resolves mobile verification state using the browser continuation secret.
 	 * @param input - Bound browser verification lookup.
 	 * @returns The matching verification or null.
 	 */
-	readonly resolveBrowserMobileVerification: (
-		input: ResolveBrowserMobileVerificationInput
-	) => Promise<DeviceVerification | null>;
+	readonly resolveBrowserMobileVerification: (input: ResolveBrowserMobileVerificationInput) => Promise<DeviceVerification | null>;
 
 	/**
 	 * Rejects a pending mobile verification atomically.
 	 * @param input - Bound mobile rejection.
 	 * @returns The rejected verification or null.
 	 */
-	readonly rejectMobile: (
-		input: RejectMobileApprovalInput
-	) => Promise<DeviceVerification | null>;
+	readonly rejectMobile: (input: RejectMobileApprovalInput) => Promise<DeviceVerification | null>;
 
 	/**
 	 * Begins a recoverable persistent device finalization.
 	 * @param input - Bound finalization request.
 	 * @returns The finalizing verification or null.
 	 */
-	readonly beginFinalization: (
-		input: BeginDeviceVerificationFinalizationInput
-	) => Promise<DeviceVerification | null>;
+	readonly beginFinalization: (input: BeginDeviceVerificationFinalizationInput) => Promise<DeviceVerification | null>;
 
 	/**
 	 * Completes a persistent device finalization idempotently.
 	 * @param input - Bound finalization completion.
 	 * @returns The consumed verification or null.
 	 */
-	readonly completeFinalization: (
-		input: CompleteDeviceVerificationFinalizationInput
-	) => Promise<DeviceVerification | null>;
+	readonly completeFinalization: (input: CompleteDeviceVerificationFinalizationInput) => Promise<DeviceVerification | null>;
 };
 
 /** Settings controlling device verification behavior. */
@@ -1191,9 +1118,7 @@ export type DeviceVerificationModePolicy = {
 	 * @param input - Pending device identity.
 	 * @returns The available confirmation modes.
 	 */
-	readonly getAvailableModes: (
-		input: ResolveDeviceVerificationModesInput
-	) => Promise<readonly DeviceVerificationMode[]>;
+	readonly getAvailableModes: (input: ResolveDeviceVerificationModesInput) => Promise<readonly DeviceVerificationMode[]>;
 };
 
 /** Identity used to resolve available device verification channels. */
@@ -1490,9 +1415,7 @@ export type AuthWarningNotifier = {
 	 * @param input - Safe authentication warning context.
 	 * @returns A promise resolved after the delivery attempt.
 	 */
-	readonly notify: (
-		input: SendAuthWarningInput
-	) => Promise<void>;
+	readonly notify: (input: SendAuthWarningInput) => Promise<void>;
 };
 
 /** Resolves an account identity for a server-generated warning. */
@@ -1502,9 +1425,7 @@ export type AuthWarningIdentityProvider = {
 	 * @param userId - Firebase user identifier.
 	 * @returns The recipient identity and available email state.
 	 */
-	readonly resolve: (
-		userId: string
-	) => Promise<AuthenticationIdentity>;
+	readonly resolve: (userId: string) => Promise<AuthenticationIdentity>;
 };
 
 /** Configures security warning email composition. */
@@ -1542,10 +1463,7 @@ export type FirebaseSessionAdapter = {
 	 * @param expiresInMs - Requested session lifetime in milliseconds.
 	 * @returns The signed cookie and its verified identity.
 	 */
-	readonly create: (
-		idToken: string,
-		expiresInMs: number
-	) => Promise<CreatedFirebaseSession>;
+	readonly create: (idToken: string, expiresInMs: number) => Promise<CreatedFirebaseSession>;
 
 	/**
 	 * Verifies a signed Firebase session cookie.
@@ -1553,10 +1471,7 @@ export type FirebaseSessionAdapter = {
 	 * @param checkRevoked - Whether Firebase revocation must be checked.
 	 * @returns The verified Firebase identity.
 	 */
-	readonly verify: (
-		sessionCookie: string,
-		checkRevoked: boolean
-	) => Promise<VerifiedFirebaseSession>;
+	readonly verify: (sessionCookie: string, checkRevoked: boolean) => Promise<VerifiedFirebaseSession>;
 };
 
 /** Minimal decoded Firebase token required by the session adapter. */
@@ -1579,10 +1494,7 @@ export type FirebaseAdminSessionProvider = {
 	 * @param checkRevoked - Whether revocation must be checked.
 	 * @returns The decoded token.
 	 */
-	readonly verifyIdToken: (
-		idToken: string,
-		checkRevoked?: boolean
-	) => Promise<FirebaseDecodedSession>;
+	readonly verifyIdToken: (idToken: string, checkRevoked?: boolean) => Promise<FirebaseDecodedSession>;
 
 	/**
 	 * Creates a signed Firebase session cookie.
@@ -1603,10 +1515,7 @@ export type FirebaseAdminSessionProvider = {
 	 * @param checkRevoked - Whether revocation must be checked.
 	 * @returns The decoded session.
 	 */
-	readonly verifySessionCookie: (
-		sessionCookie: string,
-		checkRevoked?: boolean
-	) => Promise<FirebaseDecodedSession>;
+	readonly verifySessionCookie: (sessionCookie: string, checkRevoked?: boolean) => Promise<FirebaseDecodedSession>;
 };
 
 /** Represents one revocable application session. */
@@ -1685,9 +1594,7 @@ export type SessionRepository = {
 	 * @param session - Session to persist.
 	 * @returns The persisted session.
 	 */
-	readonly create: (
-		session: CreateSessionInput
-	) => Promise<Session>;
+	readonly create: (session: CreateSessionInput) => Promise<Session>;
 
 	/**
 	 * Finds a session from its hashed connection token.
@@ -1696,20 +1603,14 @@ export type SessionRepository = {
 	 * @param applicationId - Expected application identifier.
 	 * @returns The matching session or null.
 	 */
-	readonly findByTokenHash: (
-		userId: string,
-		tokenHash: string,
-		applicationId: string
-	) => Promise<Session | null>;
+	readonly findByTokenHash: (userId: string, tokenHash: string, applicationId: string) => Promise<Session | null>;
 
 	/**
 	 * Lists every session owned by an account.
 	 * @param userId - Firebase user owning the session collection.
 	 * @returns The account sessions.
 	 */
-	readonly listByUser: (
-		userId: string
-	) => Promise<readonly Session[]>;
+	readonly listByUser: (userId: string) => Promise<readonly Session[]>;
 
 	/**
 	 * Atomically marks an active session as recently used.
@@ -1719,12 +1620,7 @@ export type SessionRepository = {
 	 * @param seenAt - Successful verification time.
 	 * @returns The updated session or null when it is no longer active.
 	 */
-	readonly touchActive: (
-		userId: string,
-		sessionId: string,
-		applicationId: string,
-		seenAt: Date
-	) => Promise<Session | null>;
+	readonly touchActive: (userId: string, sessionId: string, applicationId: string, seenAt: Date) => Promise<Session | null>;
 
 	/**
 	 * Atomically revokes an application session.
@@ -1734,12 +1630,7 @@ export type SessionRepository = {
 	 * @param revokedAt - Revocation time.
 	 * @returns The revoked session or null when it does not exist.
 	 */
-	readonly revoke: (
-		userId: string,
-		sessionId: string,
-		applicationId: string,
-		revokedAt: Date
-	) => Promise<Session | null>;
+	readonly revoke: (userId: string, sessionId: string, applicationId: string, revokedAt: Date) => Promise<Session | null>;
 
 	/**
 	 * Revokes every active session associated with a device.
@@ -1748,11 +1639,7 @@ export type SessionRepository = {
 	 * @param revokedAt - Revocation time.
 	 * @returns The number of sessions revoked.
 	 */
-	readonly revokeByDevice: (
-		userId: string,
-		deviceId: string,
-		revokedAt: Date
-	) => Promise<number>;
+	readonly revokeByDevice: (userId: string, deviceId: string, revokedAt: Date) => Promise<number>;
 
 	/**
 	 * Revokes one account-owned session without trusting its application.
@@ -1761,11 +1648,7 @@ export type SessionRepository = {
 	 * @param revokedAt - Revocation time.
 	 * @returns The revoked session or null when it does not exist.
 	 */
-	readonly revokeOwned: (
-		userId: string,
-		sessionId: string,
-		revokedAt: Date
-	) => Promise<Session | null>;
+	readonly revokeOwned: (userId: string, sessionId: string, revokedAt: Date) => Promise<Session | null>;
 
 	/**
 	 * Revokes every active account session except the current one.
@@ -1774,11 +1657,7 @@ export type SessionRepository = {
 	 * @param revokedAt - Revocation time.
 	 * @returns The number of sessions revoked.
 	 */
-	readonly revokeOthers: (
-		userId: string,
-		currentSessionId: string,
-		revokedAt: Date
-	) => Promise<number>;
+	readonly revokeOthers: (userId: string, currentSessionId: string, revokedAt: Date) => Promise<number>;
 };
 
 /** Values issued for a new authenticated session. */
@@ -1869,18 +1748,14 @@ export type AuthenticationIdentityProvider = {
 	 * @param idToken - Firebase ID token supplied by the client.
 	 * @returns The verified authentication identity.
 	 */
-	readonly verify: (
-		idToken: string
-	) => Promise<AuthenticationIdentity>;
+	readonly verify: (idToken: string) => Promise<AuthenticationIdentity>;
 
 	/**
 	 * Marks the current Firebase email address as verified.
 	 * @param userId - Firebase user identifier.
 	 * @returns A promise resolved after the account update.
 	 */
-	readonly markEmailVerified: (
-		userId: string
-	) => Promise<void>;
+	readonly markEmailVerified: (userId: string) => Promise<void>;
 };
 
 /** Input used to begin authentication after Firebase sign-in. */
@@ -2021,6 +1896,9 @@ export type WebSsoClient = {
 
 	/** Exact callback URLs accepted for the client. */
 	readonly redirectUris: readonly string[];
+
+	/** Exact browser origins allowed to perform passkey ceremonies. */
+	readonly passkeyOrigins: readonly string[];
 
 	/** Server-only secret used by the callback exchange. */
 	readonly clientSecret: string | undefined;
@@ -2173,6 +2051,51 @@ export type IssuedWebAuthorizationRequest = {
 	readonly browserToken: string;
 };
 
+/** Input used by a confidential client to begin an embedded passkey flow. */
+export type BeginPasskeyWebAuthorizationInput = IssuePasskeyWebAuthorizationIdentityInput & {
+	/** Exact browser origin that will perform the WebAuthn ceremony. */
+	readonly passkeyOrigin: string;
+};
+
+/** Server-bound passkey authorization returned to a confidential client. */
+export type IssuedPasskeyWebAuthorization = IssuedWebAuthorizationRequest & {
+	/** Exact trusted origin selected from the registered client configuration. */
+	readonly passkeyOrigin: string;
+};
+
+/** One-time browser handoff stored before returning to Account. */
+export type StoredWebAuthorizationHandoff = {
+	/** Hash of the opaque handoff ticket. */
+	readonly ticketHash: string;
+
+	/** Active authorization request identifier. */
+	readonly requestId: string;
+
+	/** Raw continuation token transferred into an Account-only cookie. */
+	readonly browserToken: string;
+
+	/** ISO ticket expiration time. */
+	readonly expiresAt: string;
+};
+
+/** Input used to consume a browser handoff ticket. */
+export type ConsumeWebAuthorizationHandoffInput = {
+	/** Hash of the opaque handoff ticket. */
+	readonly ticketHash: string;
+
+	/** Current ISO time used for expiration validation. */
+	readonly consumedAt: string;
+};
+
+/** Opaque browser handoff safe to place in a redirect URL. */
+export type IssuedWebAuthorizationHandoff = {
+	/** Single-use handoff ticket. */
+	readonly ticket: string;
+
+	/** Ticket expiration time. */
+	readonly expiresAt: Date;
+};
+
 /** Input used to begin Web SSO authorization. */
 export type BeginWebAuthorizationInput = {
 	/** One-time identity handoff issued to the confidential client. */
@@ -2273,27 +2196,35 @@ export type WebAuthorizationRepository = {
 	 * @param ticket - Complete ticket to persist.
 	 * @returns A promise resolved after persistence.
 	 */
-	readonly createIdentityTicket: (
-		ticket: StoredWebAuthorizationIdentityTicket
-	) => Promise<void>;
+	readonly createIdentityTicket: (ticket: StoredWebAuthorizationIdentityTicket) => Promise<void>;
 
 	/**
 	 * Atomically validates and consumes an identity handoff.
 	 * @param input - Expected ticket binding and current time.
 	 * @returns The consumed ticket or null.
 	 */
-	readonly consumeIdentityTicket: (
-		input: ConsumeWebAuthorizationIdentityTicketInput
-	) => Promise<StoredWebAuthorizationIdentityTicket | null>;
+	readonly consumeIdentityTicket: (input: ConsumeWebAuthorizationIdentityTicketInput) => Promise<StoredWebAuthorizationIdentityTicket | null>;
+
+	/**
+	 * Creates a one-time browser handoff.
+	 * @param handoff - Complete handoff to persist.
+	 * @returns A promise resolved after persistence.
+	 */
+	readonly createHandoff: (handoff: StoredWebAuthorizationHandoff) => Promise<void>;
+
+	/**
+	 * Atomically validates and consumes a browser handoff.
+	 * @param input - Expected ticket hash and current time.
+	 * @returns The consumed handoff or null.
+	 */
+	readonly consumeHandoff: (input: ConsumeWebAuthorizationHandoffInput) => Promise<StoredWebAuthorizationHandoff | null>;
 
 	/**
 	 * Creates a browser-bound authorization request.
 	 * @param request - Complete request to persist.
 	 * @returns A promise resolved after persistence.
 	 */
-	readonly createRequest: (
-		request: WebAuthorizationRequest
-	) => Promise<void>;
+	readonly createRequest: (request: WebAuthorizationRequest) => Promise<void>;
 
 	/**
 	 * Finds an active browser-bound request.
@@ -2302,11 +2233,7 @@ export type WebAuthorizationRepository = {
 	 * @param resolvedAt - Current time.
 	 * @returns The active request or null.
 	 */
-	readonly findRequest: (
-		requestId: string,
-		browserTokenHash: string,
-		resolvedAt: Date
-	) => Promise<WebAuthorizationRequest | null>;
+	readonly findRequest: (requestId: string, browserTokenHash: string, resolvedAt: Date) => Promise<WebAuthorizationRequest | null>;
 
 	/**
 	 * Binds a freshly verified Firebase ID token to a passkey authorization.
@@ -2317,13 +2244,7 @@ export type WebAuthorizationRepository = {
 	 * @param updatedAt - Current ISO time.
 	 * @returns Whether the active request was updated.
 	 */
-	readonly bindIdentityToken: (
-		requestId: string,
-		browserTokenHash: string,
-		userId: string,
-		idToken: string,
-		updatedAt: string
-	) => Promise<boolean>;
+	readonly bindIdentityToken: (requestId: string, browserTokenHash: string, userId: string, idToken: string, updatedAt: string) => Promise<boolean>;
 
 	/**
 	 * Binds the account discovered from a verified passkey.
@@ -2333,30 +2254,21 @@ export type WebAuthorizationRepository = {
 	 * @param updatedAt - Current ISO time.
 	 * @returns Whether the active request was updated.
 	 */
-	readonly bindPasskeyUser: (
-		requestId: string,
-		browserTokenHash: string,
-		userId: string,
-		updatedAt: string
-	) => Promise<boolean>;
+	readonly bindPasskeyUser: (requestId: string, browserTokenHash: string, userId: string, updatedAt: string) => Promise<boolean>;
 
 	/**
 	 * Replaces an active request with a one-time grant.
 	 * @param input - Bound request and grant values.
 	 * @returns Whether the request was completed.
 	 */
-	readonly completeRequest: (
-		input: CompleteWebAuthorizationRepositoryInput
-	) => Promise<boolean>;
+	readonly completeRequest: (input: CompleteWebAuthorizationRepositoryInput) => Promise<boolean>;
 
 	/**
 	 * Atomically consumes a matching authorization grant.
 	 * @param input - Expected client, callback, and PKCE values.
 	 * @returns The consumed grant or null.
 	 */
-	readonly consumeGrant: (
-		input: ConsumeWebAuthorizationGrantInput
-	) => Promise<StoredWebAuthorizationGrant | null>;
+	readonly consumeGrant: (input: ConsumeWebAuthorizationGrantInput) => Promise<StoredWebAuthorizationGrant | null>;
 };
 
 /** Input used to finalize Web authentication. */
@@ -2496,25 +2408,19 @@ export type EmailVerificationRateLimitRepository = {
 	 * @param input - Account and application identity.
 	 * @returns Current rate-limit decision.
 	 */
-	readonly check: (
-		input: EmailVerificationRateLimitInput
-	) => Promise<EmailVerificationRateLimitDecision>;
+	readonly check: (input: EmailVerificationRateLimitInput) => Promise<EmailVerificationRateLimitDecision>;
 
 	/**
 	 * Reserves one initial verification email.
 	 * @param input - Account and application identity.
 	 * @returns Current rate-limit decision.
 	 */
-	readonly reserveInitialEmail: (
-		input: EmailVerificationRateLimitInput
-	) => Promise<EmailVerificationRateLimitDecision>;
+	readonly reserveInitialEmail: (input: EmailVerificationRateLimitInput) => Promise<EmailVerificationRateLimitDecision>;
 
 	/**
 	 * Applies the next progressive penalty.
 	 * @param input - Account and application identity.
 	 * @returns Applied or existing rate-limit decision.
 	 */
-	readonly penalize: (
-		input: EmailVerificationRateLimitInput
-	) => Promise<EmailVerificationRateLimitDecision>;
+	readonly penalize: (input: EmailVerificationRateLimitInput) => Promise<EmailVerificationRateLimitDecision>;
 };

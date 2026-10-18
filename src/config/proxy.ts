@@ -6,10 +6,7 @@ const isDevelopment = Env.public.environment === 'development';
 const isPreview = Env.public.environment === 'preview';
 const previewHostname = 'preview.assosync.fr';
 
-const resolveHostname = (
-	developmentHostname: string,
-	productionHostname: string
-): string => {
+const resolveHostname = (developmentHostname: string, productionHostname: string): string => {
 	if (isDevelopment) {
 		return developmentHostname;
 	}
@@ -21,11 +18,7 @@ const resolveHostname = (
 	return productionHostname;
 };
 
-const resolveUrl = (
-	developmentUrl: string,
-	previewUrl: string,
-	productionUrl: string
-): string => {
+const resolveUrl = (developmentUrl: string, previewUrl: string, productionUrl: string): string => {
 	if (isDevelopment) {
 		return developmentUrl;
 	}
@@ -38,6 +31,7 @@ const resolveUrl = (
 };
 
 const accountPublicRoutes = [
+	'/.well-known/webauthn',
 	isPreview ? '/account/login' : '/login',
 	isPreview ? '/account/confirm-device' : '/confirm-device',
 	isPreview ? '/account/passkey' : '/passkey',
@@ -51,42 +45,25 @@ const consolePublicRoutes = [
 const proxyConfig = defineProxyConfig({
 	scopes: {
 		www: {
-			hostname: resolveHostname(
-				'www.localhost',
-				'www.assosync.fr'
-			),
+			hostname: resolveHostname('www.localhost', 'www.assosync.fr'),
 			rewritePrefix: '/www'
 		},
 
 		account: {
-			hostname: resolveHostname(
-				'account.localhost',
-				'account.assosync.fr'
-			),
+			hostname: resolveHostname('account.localhost', 'account.assosync.fr'),
 			rewritePrefix: '/account',
 			authentication: {
 				publicPaths: accountPublicRoutes,
-				loginUrl: resolveUrl(
-					'http://account.localhost:3000/login',
-					'https://preview.assosync.fr/account/login',
-					'https://account.assosync.fr/login'
-				)
+				loginUrl: resolveUrl('http://account.localhost:3000/login', 'https://preview.assosync.fr/account/login', 'https://account.assosync.fr/login')
 			}
 		},
 
 		console: {
-			hostname: resolveHostname(
-				'console.localhost',
-				'console.assosync.fr'
-			),
+			hostname: resolveHostname('console.localhost', 'console.assosync.fr'),
 			rewritePrefix: '/console',
 			authentication: {
 				publicPaths: consolePublicRoutes,
-				loginUrl: resolveUrl(
-					'http://console.localhost:3000/login',
-					'https://preview.assosync.fr/console/login',
-					'https://console.assosync.fr/login'
-				)
+				loginUrl: resolveUrl('http://console.localhost:3000/login', 'https://preview.assosync.fr/console/login', 'https://console.assosync.fr/login')
 			}
 		}
 	},

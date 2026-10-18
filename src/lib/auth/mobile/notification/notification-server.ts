@@ -5,9 +5,6 @@ import MobileNotificationService from '@/lib/auth/mobile/notification/notificati
 import firebaseCloudMessagingService from '@/services/firebase/messaging-server';
 
 /** Shared server-side mobile authentication notification service. */
-const mobileNotificationService = new MobileNotificationService(
-	mobileInstallationService,
-	firebaseCloudMessagingService
-);
+const mobileNotificationService = new MobileNotificationService(mobileInstallationService, firebaseCloudMessagingService);
 
 export default mobileNotificationService;

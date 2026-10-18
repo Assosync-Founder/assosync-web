@@ -2,11 +2,7 @@ import 'server-only';
 
 import DeviceService from '@/lib/auth/device/device-service';
 import SessionService from '@/lib/auth/session/session-service';
-import type {
-	AccountDevice,
-	Device,
-	RevokeManagedDeviceResult
-} from '@/types/auth';
+import type { AccountDevice, Device, RevokeManagedDeviceResult } from '@/types/auth';
 
 /** Coordinates account device management with session revocation. */
 class DeviceManagementService {
@@ -15,10 +11,7 @@ class DeviceManagementService {
 	 * @param devices - Trusted device service.
 	 * @param sessions - Application session service.
 	 */
-	constructor(
-		private readonly devices: DeviceService,
-		private readonly sessions: SessionService
-	) {}
+	constructor(private readonly devices: DeviceService, private readonly sessions: SessionService) {}
 
 	/**
 	 * Lists devices without exposing their stored token hashes.
@@ -26,10 +19,7 @@ class DeviceManagementService {
 	 * @param currentDeviceId - Device associated with the current session.
 	 * @returns Public account devices.
 	 */
-	readonly list = async (
-		userId: string,
-		currentDeviceId: string
-	): Promise<readonly AccountDevice[]> => {
+	readonly list = async (userId: string, currentDeviceId: string): Promise<readonly AccountDevice[]> => {
 		const devices = await this.devices.list(userId);
 
 		return devices.map((device) => {
@@ -45,17 +35,8 @@ class DeviceManagementService {
 	 * @param currentDeviceId - Device associated with the current session.
 	 * @returns The renamed public device.
 	 */
-	readonly rename = async (
-		userId: string,
-		deviceId: string,
-		displayName: string | null,
-		currentDeviceId: string
-	): Promise<AccountDevice> => {
-		const device = await this.devices.rename(
-			userId,
-			deviceId,
-			displayName
-		);
+	readonly rename = async (userId: string, deviceId: string, displayName: string | null, currentDeviceId: string): Promise<AccountDevice> => {
+		const device = await this.devices.rename(userId, deviceId, displayName);
 
 		return this.toAccountDevice(device, currentDeviceId);
 	};
@@ -67,27 +48,13 @@ class DeviceManagementService {
 	 * @param currentDeviceId - Device associated with the current session.
 	 * @returns The revoked public device and revoked session count.
 	 */
-	readonly revoke = async (
-		userId: string,
-		deviceId: string,
-		currentDeviceId: string
-	): Promise<RevokeManagedDeviceResult> => {
-		const device = await this.devices.revoke(
-			userId,
-			deviceId
-		);
+	readonly revoke = async (userId: string, deviceId: string, currentDeviceId: string): Promise<RevokeManagedDeviceResult> => {
+		const device = await this.devices.revoke(userId, deviceId);
 
-		const revokedSessionCount =
-			await this.sessions.revokeByDevice(
-				userId,
-				deviceId
-			);
+		const revokedSessionCount = await this.sessions.revokeByDevice(userId, deviceId);
 
 		return {
-			device: this.toAccountDevice(
-				device,
-				currentDeviceId
-			),
+			device: this.toAccountDevice(device, currentDeviceId),
 			revokedSessionCount
 		};
 	};
@@ -98,10 +65,7 @@ class DeviceManagementService {
 	 * @param currentDeviceId - Device associated with the current session.
 	 * @returns The public account device.
 	 */
-	private readonly toAccountDevice = (
-		device: Device,
-		currentDeviceId: string
-	): AccountDevice => {
+	private readonly toAccountDevice = (device: Device, currentDeviceId: string): AccountDevice => {
 		return {
 			id: device.id,
 			userId: device.userId,

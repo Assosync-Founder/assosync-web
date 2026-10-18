@@ -1,14 +1,6 @@
 import type { Redis } from '@upstash/redis';
-import {
-	applyEmailVerificationPenaltyScript,
-	checkEmailVerificationLimitScript,
-	reserveInitialVerificationEmailScript
-} from '@/lib/auth/verification/verification-rate-limit-scripts';
-import type {
-	EmailVerificationRateLimitDecision,
-	EmailVerificationRateLimitOptions,
-	EmailVerificationRateLimitRepository
-} from '@/types/auth';
+import { applyEmailVerificationPenaltyScript, checkEmailVerificationLimitScript, reserveInitialVerificationEmailScript } from '@/lib/auth/verification/verification-rate-limit-scripts';
+import type { EmailVerificationRateLimitDecision, EmailVerificationRateLimitOptions, EmailVerificationRateLimitRepository } from '@/types/auth';
 
 const RATE_LIMIT_PREFIX = 'auth:email-verification-rate-limit';
 
@@ -16,9 +8,7 @@ const RATE_LIMIT_PREFIX = 'auth:email-verification-rate-limit';
  * @param value - Value to inspect.
  * @returns Whether the value is a string-keyed record.
  */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
@@ -31,9 +21,7 @@ const isRecord = (
  * @returns The normalized unknown value.
  * @throws {SyntaxError} When a serialized value contains invalid JSON.
  */
-const parseJson = (
-	value: unknown
-): unknown => {
+const parseJson = (value: unknown): unknown => {
 	if (typeof value === 'string') {
 		return JSON.parse(value);
 	}
@@ -46,23 +34,18 @@ const parseJson = (
  * @returns The validated rate-limit decision.
  * @throws {TypeError} When the result is malformed.
  */
-const parseDecision = (
-	value: unknown
-): EmailVerificationRateLimitDecision => {
+const parseDecision = (value: unknown): EmailVerificationRateLimitDecision => {
 	const parsed = parseJson(value);
 
 	if (!isRecord(parsed)) {
-		throw new TypeError(
-			'The email verification rate-limit result is invalid.'
-		);
+		throw new TypeError('The email verification rate-limit result is invalid.');
 	}
 
 	if (parsed.allowed === true) {
 		return { allowed: true };
 	}
 
-	if (
-		parsed.allowed === false &&
+	if (parsed.allowed === false &&
 		typeof parsed.retryAfterMs === 'number' &&
 		Number.isFinite(parsed.retryAfterMs) &&
 		parsed.retryAfterMs > 0 &&
@@ -70,8 +53,7 @@ const parseDecision = (
 		Number.isSafeInteger(parsed.penaltyLevel) &&
 		parsed.penaltyLevel >= 1 &&
 		parsed.penaltyLevel <= 4 &&
-		typeof parsed.penaltyApplied === 'boolean'
-	) {
+		typeof parsed.penaltyApplied === 'boolean') {
 		return {
 			allowed: false,
 			retryAfterMs: parsed.retryAfterMs,
@@ -80,9 +62,7 @@ const parseDecision = (
 		};
 	}
 
-	throw new TypeError(
-		'The email verification rate-limit result is invalid.'
-	);
+	throw new TypeError('The email verification rate-limit result is invalid.');
 };
 
 /** Builds the account and application penalty key.
@@ -90,10 +70,7 @@ const parseDecision = (
  * @param applicationId - Application identifier.
  * @returns The Redis penalty key.
  */
-const getPenaltyKey = (
-	userId: string,
-	applicationId: string
-): string => {
+const getPenaltyKey = (userId: string, applicationId: string): string => {
 	return [
 		RATE_LIMIT_PREFIX,
 		encodeURIComponent(userId),
@@ -107,10 +84,7 @@ const getPenaltyKey = (
  * @param applicationId - Application identifier.
  * @returns The Redis fixed-window key.
  */
-const getInitialEmailWindowKey = (
-	userId: string,
-	applicationId: string
-): string => {
+const getInitialEmailWindowKey = (userId: string, applicationId: string): string => {
 	return [
 		RATE_LIMIT_PREFIX,
 		encodeURIComponent(userId),
@@ -125,12 +99,8 @@ const getInitialEmailWindowKey = (
  * @returns The email-verification rate-limit repository.
  * @throws {RangeError} When the settings are invalid.
  */
-const createEmailVerificationRateLimitRepository = (
-	redis: Redis,
-	options: EmailVerificationRateLimitOptions
-): EmailVerificationRateLimitRepository => {
-	if (
-		!Number.isSafeInteger(options.initialEmailWindowMs) ||
+const createEmailVerificationRateLimitRepository = (redis: Redis, options: EmailVerificationRateLimitOptions): EmailVerificationRateLimitRepository => {
+	if (!Number.isSafeInteger(options.initialEmailWindowMs) ||
 		options.initialEmailWindowMs <= 0 ||
 		!Number.isSafeInteger(options.maxInitialEmailsPerWindow) ||
 		options.maxInitialEmailsPerWindow <= 0 ||
@@ -138,22 +108,15 @@ const createEmailVerificationRateLimitRepository = (
 		options.penaltyResetMs <= 0 ||
 		options.penaltyDurationsMs.some((duration) => {
 			return !Number.isSafeInteger(duration) || duration <= 0;
-		})
-	) {
-		throw new RangeError(
-			'The email verification rate-limit configuration is invalid.'
-		);
+		})) {
+		throw new RangeError('The email verification rate-limit configuration is invalid.');
 	}
 
-	const penalize: EmailVerificationRateLimitRepository['penalize'] =
-		async (input) => {
+	const penalize: EmailVerificationRateLimitRepository['penalize'] = async (input) => {
 			const result = await redis.eval<string[], unknown>(
 				applyEmailVerificationPenaltyScript,
 				[
-					getPenaltyKey(
-						input.userId,
-						input.applicationId
-					)
+					getPenaltyKey(input.userId, input.applicationId)
 				],
 				[
 					input.requestedAt.getTime().toString(),
@@ -172,10 +135,7 @@ const createEmailVerificationRateLimitRepository = (
 			const result = await redis.eval<string[], unknown>(
 				checkEmailVerificationLimitScript,
 				[
-					getPenaltyKey(
-						input.userId,
-						input.applicationId
-					)
+					getPenaltyKey(input.userId, input.applicationId)
 				],
 				[input.requestedAt.getTime().toString()]
 			);
@@ -187,14 +147,8 @@ const createEmailVerificationRateLimitRepository = (
 			const result = await redis.eval<string[], unknown>(
 				reserveInitialVerificationEmailScript,
 				[
-					getPenaltyKey(
-						input.userId,
-						input.applicationId
-					),
-					getInitialEmailWindowKey(
-						input.userId,
-						input.applicationId
-					)
+					getPenaltyKey(input.userId, input.applicationId),
+					getInitialEmailWindowKey(input.userId, input.applicationId)
 				],
 				[
 					input.requestedAt.getTime().toString(),
@@ -204,11 +158,7 @@ const createEmailVerificationRateLimitRepository = (
 			);
 			const parsed = parseJson(result);
 
-			if (
-				isRecord(parsed) &&
-				parsed.allowed === false &&
-				parsed.requiresPenalty === true
-			) {
+			if (isRecord(parsed) && parsed.allowed === false && parsed.requiresPenalty === true) {
 				return penalize(input);
 			}
 

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000 --hostname 0.0.0.0",
     "build": "next build",
+    "test": "vitest run",
     "start": "next start -p 3000",
     "audit:production": "pnpm audit --prod",
     "emulators": "pnpm --dir ../../Firebase run emulator"
@@ -34,7 +35,9 @@
     "babel-plugin-react-compiler": "1.0.0",
     "postcss": "^8.5.29",
     "tailwindcss": "^4.3.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^7.3.7",
+    "vitest": "^4.1.12"
   },
   "packageManager": "pnpm@12.10.1"
 }

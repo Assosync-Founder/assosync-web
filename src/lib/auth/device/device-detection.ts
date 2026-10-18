@@ -10,9 +10,7 @@ const MAXIMUM_INFORMATION_LENGTH = 80;
  * @param value - Untrusted device information.
  * @returns A safe display value or null.
  */
-const normalizeInformation = (
-	value: string | null | undefined
-): string | null => {
+const normalizeInformation = (value: string | null | undefined): string | null => {
 	if (!value) {
 		return null;
 	}
@@ -34,9 +32,7 @@ const normalizeInformation = (
  * @param value - Raw Sec-CH-UA header value.
  * @returns Browser brands accepted by Bowser.
  */
-const parseClientBrands = (
-	value: string | null
-) => {
+const parseClientBrands = (value: string | null) => {
 	if (!value) {
 		return [];
 	}
@@ -60,22 +56,14 @@ const parseClientBrands = (
  * @param headers - Incoming browser request headers.
  * @returns Best-effort device information suitable for user-facing security UI.
  */
-const detectDeviceInformation = (
-	headers: Headers
-): DetectedDeviceInformation => {
+const detectDeviceInformation = (headers: Headers): DetectedDeviceInformation => {
 	const userAgent = headers.get('user-agent')?.slice(0, 512) ?? '';
 	const mobileHint = headers.get('sec-ch-ua-mobile');
-	const platformHint = normalizeInformation(
-		headers.get('sec-ch-ua-platform')
-	);
+	const platformHint = normalizeInformation(headers.get('sec-ch-ua-platform'));
 
-	const platformVersionHint = normalizeInformation(
-		headers.get('sec-ch-ua-platform-version')
-	);
+	const platformVersionHint = normalizeInformation(headers.get('sec-ch-ua-platform-version'));
 
-	const deviceModelHint = normalizeInformation(
-		headers.get('sec-ch-ua-model')
-	);
+	const deviceModelHint = normalizeInformation(headers.get('sec-ch-ua-model'));
 
 	const clientHints = {
 		brands: parseClientBrands(headers.get('sec-ch-ua')),
@@ -131,9 +119,7 @@ const detectDeviceInformation = (
 		operatingSystemName === 'macOS'
 	);
 
-	const detectedDeviceBrand = normalizeInformation(
-		detected?.platform.vendor
-	);
+	const detectedDeviceBrand = normalizeInformation(detected?.platform.vendor);
 
 	return {
 		category,

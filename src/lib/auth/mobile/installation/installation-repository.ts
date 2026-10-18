@@ -1,14 +1,7 @@
 import 'server-only';
 
 import type { FirestoreRepository } from '@assosync/firestore';
-import type {
-	MobileApplicationId,
-	MobileInstallation,
-	MobileInstallationRepository,
-	MobileInstallationStatus,
-	MobilePlatform,
-	StoredMobileInstallation
-} from '@/types/auth';
+import type { MobileApplicationId, MobileInstallation, MobileInstallationRepository, MobileInstallationStatus, MobilePlatform, StoredMobileInstallation } from '@/types/auth';
 
 const ACCOUNT_COLLECTION = 'account';
 const MOBILE_COLLECTION = 'mobiles';
@@ -20,15 +13,8 @@ const MAXIMUM_DOCUMENT_ID_LENGTH = 128;
  * @param label - Identifier label used in the diagnostic message.
  * @throws {TypeError} When the identifier is empty or contains a path separator.
  */
-const assertDocumentId = (
-	value: string,
-	label: string
-): void => {
-	if (
-		!value.trim() ||
-		value.length > MAXIMUM_DOCUMENT_ID_LENGTH ||
-		value.includes('/')
-	) {
+const assertDocumentId = (value: string, label: string): void => {
+	if (!value.trim() || value.length > MAXIMUM_DOCUMENT_ID_LENGTH || value.includes('/')) {
 		throw new TypeError(`${label} is invalid.`);
 	}
 };
@@ -38,9 +24,7 @@ const assertDocumentId = (
  * @param userId - Firebase user identifier.
  * @returns The account mobile installation collection path.
  */
-const getMobileInstallationCollectionPath = (
-	userId: string
-): string => {
+const getMobileInstallationCollectionPath = (userId: string): string => {
 	assertDocumentId(userId, 'The Firebase user identifier');
 
 	return `${ACCOUNT_COLLECTION}/${userId}/${MOBILE_COLLECTION}`;
@@ -52,14 +36,8 @@ const getMobileInstallationCollectionPath = (
  * @param mobileInstallationId - Mobile installation identifier.
  * @returns The account mobile installation document path.
  */
-const getMobileInstallationPath = (
-	userId: string,
-	mobileInstallationId: string
-): string => {
-	assertDocumentId(
-		mobileInstallationId,
-		'The mobile installation identifier'
-	);
+const getMobileInstallationPath = (userId: string, mobileInstallationId: string): string => {
+	assertDocumentId(mobileInstallationId, 'The mobile installation identifier');
 
 	return `${getMobileInstallationCollectionPath(userId)}/${mobileInstallationId}`;
 };
@@ -69,9 +47,7 @@ const getMobileInstallationPath = (
  * @param value - Value to inspect.
  * @returns Whether the value is a string-keyed record.
  */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
@@ -84,9 +60,7 @@ const isRecord = (
  * @param value - Value to inspect.
  * @returns Whether the value is a valid JavaScript date.
  */
-const isValidDate = (
-	value: unknown
-): value is Date => {
+const isValidDate = (value: unknown): value is Date => {
 	return (
 		value instanceof Date &&
 		!Number.isNaN(value.getTime())
@@ -98,9 +72,7 @@ const isValidDate = (
  * @param value - Value to inspect.
  * @returns Whether the value is a mobile application identifier.
  */
-const isMobileApplicationId = (
-	value: unknown
-): value is MobileApplicationId => {
+const isMobileApplicationId = (value: unknown): value is MobileApplicationId => {
 	return value === 'calendis' || value === 'collectineo';
 };
 
@@ -109,9 +81,7 @@ const isMobileApplicationId = (
  * @param value - Value to inspect.
  * @returns Whether the value is a mobile platform.
  */
-const isMobilePlatform = (
-	value: unknown
-): value is MobilePlatform => {
+const isMobilePlatform = (value: unknown): value is MobilePlatform => {
 	return value === 'android' || value === 'ios';
 };
 
@@ -120,9 +90,7 @@ const isMobilePlatform = (
  * @param value - Value to inspect.
  * @returns Whether the value is a mobile installation status.
  */
-const isMobileInstallationStatus = (
-	value: unknown
-): value is MobileInstallationStatus => {
+const isMobileInstallationStatus = (value: unknown): value is MobileInstallationStatus => {
 	return value === 'active' || value === 'disabled';
 };
 
@@ -132,13 +100,9 @@ const isMobileInstallationStatus = (
  * @returns A validated mobile installation.
  * @throws {TypeError} When the stored document is invalid.
  */
-const toMobileInstallation = (
-	value: unknown
-): MobileInstallation => {
+const toMobileInstallation = (value: unknown): MobileInstallation => {
 	if (!isRecord(value)) {
-		throw new TypeError(
-			'The stored mobile authentication installation is invalid.'
-		);
+		throw new TypeError('The stored mobile authentication installation is invalid.');
 	}
 
 	const {
@@ -158,8 +122,7 @@ const toMobileInstallation = (
 		updated
 	} = value;
 
-	if (
-		typeof uid !== 'string' ||
+	if (typeof uid !== 'string' ||
 		!uid ||
 		typeof userId !== 'string' ||
 		!userId ||
@@ -182,20 +145,12 @@ const toMobileInstallation = (
 		!isValidDate(pushTokenUpdated) ||
 		(disabled !== null && !isValidDate(disabled)) ||
 		!isValidDate(created) ||
-		!isValidDate(updated)
-	) {
-		throw new TypeError(
-			'The stored mobile authentication installation is invalid.'
-		);
+		!isValidDate(updated)) {
+		throw new TypeError('The stored mobile authentication installation is invalid.');
 	}
 
-	if (
-		(status === 'active' && disabled !== null) ||
-		(status === 'disabled' && disabled === null)
-	) {
-		throw new TypeError(
-			'The stored mobile authentication installation state is inconsistent.'
-		);
+	if ((status === 'active' && disabled !== null) || (status === 'disabled' && disabled === null)) {
+		throw new TypeError('The stored mobile authentication installation state is inconsistent.');
 	}
 
 	return {
@@ -222,16 +177,11 @@ const toMobileInstallation = (
  * @returns A validated account mobile installation.
  * @throws {TypeError} When the stored owner does not match its account path.
  */
-const toOwnedMobileInstallation = (
-	value: unknown,
-	userId: string
-): MobileInstallation => {
+const toOwnedMobileInstallation = (value: unknown, userId: string): MobileInstallation => {
 	const mobileInstallation = toMobileInstallation(value);
 
 	if (mobileInstallation.userId !== userId) {
-		throw new TypeError(
-			'The stored mobile authentication installation owner is invalid.'
-		);
+		throw new TypeError('The stored mobile authentication installation owner is invalid.');
 	}
 
 	return mobileInstallation;
@@ -242,42 +192,29 @@ const toOwnedMobileInstallation = (
  * @param firestore - Shared Firestore repository.
  * @returns The mobile installation repository.
  */
-const createMobileInstallationRepository = (
-	firestore: FirestoreRepository
-): MobileInstallationRepository => {
+const createMobileInstallationRepository = (firestore: FirestoreRepository): MobileInstallationRepository => {
 	return {
 		upsert: async (mobileInstallation) => {
 			return firestore.transaction(async (transaction) => {
-				const path = getMobileInstallationPath(
-					mobileInstallation.userId,
-					mobileInstallation.id
-				);
+				const path = getMobileInstallationPath(mobileInstallation.userId, mobileInstallation.id);
 
-				const storedMobileInstallation =
-					await transaction.get<StoredMobileInstallation>(path);
+				const storedMobileInstallation = await transaction.get<StoredMobileInstallation>(path);
 
 				if (!storedMobileInstallation) {
 					transaction.set<StoredMobileInstallation>(
-						getMobileInstallationCollectionPath(
-							mobileInstallation.userId
-						),
+						getMobileInstallationCollectionPath(mobileInstallation.userId),
 						{
 							uid: mobileInstallation.id,
 							userId: mobileInstallation.userId,
-							mobileApplicationId:
-								mobileInstallation.mobileApplicationId,
+							mobileApplicationId: mobileInstallation.mobileApplicationId,
 							platform: mobileInstallation.platform,
-							mobileDeviceName:
-								mobileInstallation.mobileDeviceName,
-							mobileApplicationVersion:
-								mobileInstallation.mobileApplicationVersion,
+							mobileDeviceName: mobileInstallation.mobileDeviceName,
+							mobileApplicationVersion: mobileInstallation.mobileApplicationVersion,
 							pushToken: mobileInstallation.pushToken,
-							pushTokenHash:
-								mobileInstallation.pushTokenHash,
+							pushTokenHash: mobileInstallation.pushTokenHash,
 							status: mobileInstallation.status,
 							lastSeen: mobileInstallation.lastSeenAt,
-							pushTokenUpdated:
-								mobileInstallation.pushTokenUpdatedAt,
+							pushTokenUpdated: mobileInstallation.pushTokenUpdatedAt,
 							disabled: mobileInstallation.disabledAt
 						}
 					);
@@ -285,50 +222,30 @@ const createMobileInstallationRepository = (
 					return mobileInstallation;
 				}
 
-				const currentMobileInstallation =
-					toOwnedMobileInstallation(
-						storedMobileInstallation,
-						mobileInstallation.userId
-					);
+				const currentMobileInstallation = toOwnedMobileInstallation(storedMobileInstallation, mobileInstallation.userId);
 
-				if (
-					currentMobileInstallation.mobileApplicationId !==
-						mobileInstallation.mobileApplicationId ||
-					currentMobileInstallation.platform !==
-						mobileInstallation.platform
-				) {
-					throw new TypeError(
-						'The mobile authentication installation identity cannot change.'
-					);
+				if (currentMobileInstallation.mobileApplicationId !== mobileInstallation.mobileApplicationId || currentMobileInstallation.platform !== mobileInstallation.platform) {
+					throw new TypeError('The mobile authentication installation identity cannot change.');
 				}
 
 				const refreshedMobileInstallation: MobileInstallation = {
 					...mobileInstallation,
 					createdAt: currentMobileInstallation.createdAt,
-					pushTokenUpdatedAt:
-						currentMobileInstallation.pushTokenHash ===
-						mobileInstallation.pushTokenHash
-							? currentMobileInstallation.pushTokenUpdatedAt
-							: mobileInstallation.pushTokenUpdatedAt
+					pushTokenUpdatedAt: currentMobileInstallation.pushTokenHash === mobileInstallation.pushTokenHash ? currentMobileInstallation.pushTokenUpdatedAt: mobileInstallation.pushTokenUpdatedAt
 				};
 
 				transaction.update<StoredMobileInstallation>(
 					path,
 					{
-						mobileApplicationId:
-							refreshedMobileInstallation.mobileApplicationId,
+						mobileApplicationId: refreshedMobileInstallation.mobileApplicationId,
 						platform: refreshedMobileInstallation.platform,
-						mobileDeviceName:
-							refreshedMobileInstallation.mobileDeviceName,
-						mobileApplicationVersion:
-							refreshedMobileInstallation.mobileApplicationVersion,
+						mobileDeviceName: refreshedMobileInstallation.mobileDeviceName,
+						mobileApplicationVersion: refreshedMobileInstallation.mobileApplicationVersion,
 						pushToken: refreshedMobileInstallation.pushToken,
-						pushTokenHash:
-							refreshedMobileInstallation.pushTokenHash,
+						pushTokenHash: refreshedMobileInstallation.pushTokenHash,
 						status: 'active',
 						lastSeen: refreshedMobileInstallation.lastSeenAt,
-						pushTokenUpdated:
-							refreshedMobileInstallation.pushTokenUpdatedAt,
+						pushTokenUpdated: refreshedMobileInstallation.pushTokenUpdatedAt,
 						disabled: null
 					}
 				);
@@ -338,22 +255,13 @@ const createMobileInstallationRepository = (
 		},
 
 		findById: async (userId, mobileInstallationId) => {
-			const storedMobileInstallation =
-				await firestore.get<StoredMobileInstallation>(
-					getMobileInstallationPath(
-						userId,
-						mobileInstallationId
-					)
-				);
+			const storedMobileInstallation = await firestore.get<StoredMobileInstallation>(getMobileInstallationPath(userId, mobileInstallationId));
 
 			if (!storedMobileInstallation) {
 				return null;
 			}
 
-			return toOwnedMobileInstallation(
-				storedMobileInstallation,
-				userId
-			);
+			return toOwnedMobileInstallation(storedMobileInstallation, userId);
 		},
 
 		listActiveByUser: async (userId) => {
@@ -361,8 +269,7 @@ const createMobileInstallationRepository = (
 			let startAfterDocId: string | undefined;
 
 			do {
-				const result =
-					await firestore.search<StoredMobileInstallation>({
+				const result = await firestore.search<StoredMobileInstallation>({
 						col: getMobileInstallationCollectionPath(userId),
 						where: [['status', '==', 'active']],
 						orderBy: [['lastSeen', 'desc']],
@@ -374,10 +281,7 @@ const createMobileInstallationRepository = (
 
 				mobileInstallations.push(
 					...result.rows.map((storedMobileInstallation) => {
-						return toOwnedMobileInstallation(
-							storedMobileInstallation,
-							userId
-						);
+						return toOwnedMobileInstallation(storedMobileInstallation, userId);
 					})
 				);
 
@@ -387,28 +291,17 @@ const createMobileInstallationRepository = (
 			return mobileInstallations;
 		},
 
-		disable: async (
-			userId,
-			mobileInstallationId,
-			disabledAt
-		) => {
+		disable: async (userId, mobileInstallationId, disabledAt) => {
 			return firestore.transaction(async (transaction) => {
-				const path = getMobileInstallationPath(
-					userId,
-					mobileInstallationId
-				);
+				const path = getMobileInstallationPath(userId, mobileInstallationId);
 
-				const storedMobileInstallation =
-					await transaction.get<StoredMobileInstallation>(path);
+				const storedMobileInstallation = await transaction.get<StoredMobileInstallation>(path);
 
 				if (!storedMobileInstallation) {
 					return null;
 				}
 
-				const mobileInstallation = toOwnedMobileInstallation(
-					storedMobileInstallation,
-					userId
-				);
+				const mobileInstallation = toOwnedMobileInstallation(storedMobileInstallation, userId);
 
 				if (mobileInstallation.status === 'disabled') {
 					return mobileInstallation;
@@ -420,13 +313,7 @@ const createMobileInstallationRepository = (
 					disabledAt
 				};
 
-				transaction.update<StoredMobileInstallation>(
-					path,
-					{
-						status: 'disabled',
-						disabled: disabledAt
-					}
-				);
+				transaction.update<StoredMobileInstallation>(path, { status: 'disabled', disabled: disabledAt });
 
 				return disabledMobileInstallation;
 			});

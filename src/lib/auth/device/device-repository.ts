@@ -1,13 +1,7 @@
 import 'server-only';
 
 import type { FirestoreRepository } from '@assosync/firestore';
-import type {
-	Device,
-	DeviceCategory,
-	DeviceRepository,
-	DeviceStatus,
-	StoredDevice
-} from '@/types/auth';
+import type { Device, DeviceCategory, DeviceRepository, DeviceStatus, StoredDevice } from '@/types/auth';
 
 const ACCOUNT_COLLECTION = 'account';
 const DEVICE_COLLECTION = 'devices';
@@ -19,15 +13,8 @@ const MAXIMUM_DOCUMENT_ID_LENGTH = 128;
  * @param label - Identifier label used in the diagnostic message.
  * @throws {TypeError} When the identifier is empty or contains a path separator.
  */
-const assertDocumentId = (
-	value: string,
-	label: string
-): void => {
-	if (
-		!value.trim() ||
-		value.length > MAXIMUM_DOCUMENT_ID_LENGTH ||
-		value.includes('/')
-	) {
+const assertDocumentId = (value: string, label: string): void => {
+	if (!value.trim() || value.length > MAXIMUM_DOCUMENT_ID_LENGTH || value.includes('/')) {
 		throw new TypeError(`${ label } is invalid.`);
 	}
 };
@@ -37,9 +24,7 @@ const assertDocumentId = (
  * @param userId - Firebase user identifier.
  * @returns The account device collection path.
  */
-const getDeviceCollectionPath = (
-	userId: string
-): string => {
+const getDeviceCollectionPath = (userId: string): string => {
 	assertDocumentId(userId, 'The Firebase user identifier');
 
 	return `${ ACCOUNT_COLLECTION }/${ userId }/${ DEVICE_COLLECTION }`;
@@ -51,10 +36,7 @@ const getDeviceCollectionPath = (
  * @param deviceId - Device document identifier.
  * @returns The account device document path.
  */
-const getDevicePath = (
-	userId: string,
-	deviceId: string
-): string => {
+const getDevicePath = (userId: string, deviceId: string): string => {
 	assertDocumentId(deviceId, 'The device identifier');
 
 	return `${ getDeviceCollectionPath(userId) }/${ deviceId }`;
@@ -65,9 +47,7 @@ const getDevicePath = (
  * @param value - Value to inspect.
  * @returns Whether the value is a string-keyed record.
  */
-const isRecord = (
-	value: unknown
-): value is Record<string, unknown> => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
 	return (
 		typeof value === 'object' &&
 		value !== null &&
@@ -80,9 +60,7 @@ const isRecord = (
  * @param value - Value to inspect.
  * @returns Whether the value is a valid JavaScript date.
  */
-const isValidDate = (
-	value: unknown
-): value is Date => {
+const isValidDate = (value: unknown): value is Date => {
 	return (
 		value instanceof Date &&
 		!Number.isNaN(value.getTime())
@@ -94,9 +72,7 @@ const isValidDate = (
  * @param value - Value to inspect.
  * @returns Whether the value is a device status.
  */
-const isDeviceStatus = (
-	value: unknown
-): value is DeviceStatus => {
+const isDeviceStatus = (value: unknown): value is DeviceStatus => {
 	return (
 		value === 'pending' ||
 		value === 'verified' ||
@@ -109,9 +85,7 @@ const isDeviceStatus = (
  * @param value - Value to inspect.
  * @returns Whether the value is a device category.
  */
-const isDeviceCategory = (
-	value: unknown
-): value is DeviceCategory => {
+const isDeviceCategory = (value: unknown): value is DeviceCategory => {
 	return (
 		value === 'desktop' ||
 		value === 'mobile' ||
@@ -125,9 +99,7 @@ const isDeviceCategory = (
  * @param value - Value to inspect.
  * @returns Whether the value is a string or null.
  */
-const isNullableString = (
-	value: unknown
-): value is string | null => {
+const isNullableString = (value: unknown): value is string | null => {
 	return value === null || typeof value === 'string';
 };
 
@@ -137,13 +109,9 @@ const isNullableString = (
  * @returns A validated device.
  * @throws {TypeError} When the stored document is invalid.
  */
-const toDevice = (
-	value: unknown
-): Device => {
+const toDevice = (value: unknown): Device => {
 	if (!isRecord(value)) {
-		throw new TypeError(
-			'The stored authentication device is invalid.'
-		);
+		throw new TypeError('The stored authentication device is invalid.');
 	}
 
 	const {
@@ -168,8 +136,7 @@ const toDevice = (
 		updated
 	} = value;
 
-	if (
-		typeof uid !== 'string' ||
+	if (typeof uid !== 'string' ||
 		!uid ||
 		typeof tokenHash !== 'string' ||
 		!tokenHash ||
@@ -191,44 +158,20 @@ const toDevice = (
 		(verified !== null && !isValidDate(verified)) ||
 		(revoked !== null && !isValidDate(revoked)) ||
 		!isValidDate(created) ||
-		!isValidDate(updated)
-	) {
-		throw new TypeError(
-			'The stored authentication device is invalid.'
-		);
+		!isValidDate(updated)) {
+		throw new TypeError('The stored authentication device is invalid.');
 	}
 
-	if (
-		status === 'verified' &&
-		(
-			verified === null ||
-			revoked !== null
-		)
-	) {
-		throw new TypeError(
-			'The stored verified device state is inconsistent.'
-		);
+	if (status === 'verified' && (verified === null || revoked !== null)) {
+		throw new TypeError('The stored verified device state is inconsistent.');
 	}
 
-	if (
-		status === 'pending' &&
-		(
-			verified !== null ||
-			revoked !== null
-		)
-	) {
-		throw new TypeError(
-			'The stored pending device state is inconsistent.'
-		);
+	if (status === 'pending' && (verified !== null || revoked !== null)) {
+		throw new TypeError('The stored pending device state is inconsistent.');
 	}
 
-	if (
-		status === 'revoked' &&
-		revoked === null
-	) {
-		throw new TypeError(
-			'The stored revoked device state is inconsistent.'
-		);
+	if (status === 'revoked' && revoked === null) {
+		throw new TypeError('The stored revoked device state is inconsistent.');
 	}
 
 	return {
@@ -260,16 +203,11 @@ const toDevice = (
  * @returns A validated account device.
  * @throws {TypeError} When the stored owner does not match the account path.
  */
-const toOwnedDevice = (
-	value: unknown,
-	userId: string
-): Device => {
+const toOwnedDevice = (value: unknown, userId: string): Device => {
 	const device = toDevice(value);
 
 	if (device.userId !== userId) {
-		throw new TypeError(
-			'The stored authentication device owner is invalid.'
-		);
+		throw new TypeError('The stored authentication device owner is invalid.');
 	}
 
 	return device;
@@ -280,9 +218,7 @@ const toOwnedDevice = (
  * @param firestore - Shared platform-independent Firestore repository.
  * @returns A repository handling device persistence and transitions.
  */
-const createDeviceRepository = (
-	firestore: FirestoreRepository
-): DeviceRepository => {
+const createDeviceRepository = (firestore: FirestoreRepository): DeviceRepository => {
 	return {
 		create: async (device) => {
 			const storedDevice = await firestore.create<StoredDevice>(
@@ -295,10 +231,8 @@ const createDeviceRepository = (
 					category: device.category,
 					browserName: device.browserName,
 					browserVersion: device.browserVersion,
-					operatingSystemName:
-						device.operatingSystemName,
-					operatingSystemVersion:
-						device.operatingSystemVersion,
+					operatingSystemName: device.operatingSystemName,
+					operatingSystemVersion: device.operatingSystemVersion,
 					deviceBrand: device.deviceBrand,
 					deviceModel: device.deviceModel,
 					status: device.status,
@@ -312,10 +246,7 @@ const createDeviceRepository = (
 			return toOwnedDevice(storedDevice, device.userId);
 		},
 
-		findByTokenHash: async (
-			userId,
-			tokenHash
-		) => {
+		findByTokenHash: async (userId, tokenHash) => {
 			const result = await firestore.search<StoredDevice>({
 				col: getDeviceCollectionPath(userId),
 				where: [['tokenHash', '==', tokenHash]],
@@ -332,9 +263,7 @@ const createDeviceRepository = (
 		},
 
 		findById: async (userId, deviceId) => {
-			const storedDevice = await firestore.get<StoredDevice>(
-				getDevicePath(userId, deviceId)
-			);
+			const storedDevice = await firestore.get<StoredDevice>(getDevicePath(userId, deviceId));
 
 			if (!storedDevice) {
 				return null;
@@ -380,10 +309,8 @@ const createDeviceRepository = (
 					category: device.category,
 					browserName: device.browserName,
 					browserVersion: device.browserVersion,
-					operatingSystemName:
-						device.operatingSystemName,
-					operatingSystemVersion:
-						device.operatingSystemVersion,
+					operatingSystemName: device.operatingSystemName,
+					operatingSystemVersion: device.operatingSystemVersion,
 					deviceBrand: device.deviceBrand,
 					deviceModel: device.deviceModel,
 					status: device.status,
@@ -397,24 +324,14 @@ const createDeviceRepository = (
 			return device;
 		},
 
-		verifyPending: async (
-			userId,
-			deviceId,
-			applicationId,
-			verifiedAt,
-			expiresAt
-		) => {
+		verifyPending: async (userId, deviceId, applicationId, verifiedAt, expiresAt) => {
 			if (expiresAt.getTime() <= verifiedAt.getTime()) {
-				throw new RangeError(
-					'The verified device expiration must follow its verification time.'
-				);
+				throw new RangeError('The verified device expiration must follow its verification time.');
 			}
 
 			return firestore.transaction(async (transaction) => {
 				const path = getDevicePath(userId, deviceId);
-				const storedDevice = await transaction.get<StoredDevice>(
-					path
-				);
+				const storedDevice = await transaction.get<StoredDevice>(path);
 
 				if (!storedDevice) {
 					return null;
@@ -422,21 +339,11 @@ const createDeviceRepository = (
 
 				const device = toOwnedDevice(storedDevice, userId);
 
-				if (
-					device.status === 'verified' &&
-					device.revokedAt === null &&
-					device.applicationId === applicationId &&
-					device.expiresAt.getTime() > verifiedAt.getTime()
-				) {
+				if (device.status === 'verified' && device.revokedAt === null && device.applicationId === applicationId && device.expiresAt.getTime() > verifiedAt.getTime()) {
 					return device;
 				}
 
-				if (
-					device.status !== 'pending' ||
-					device.revokedAt !== null ||
-					device.applicationId !== applicationId ||
-					device.expiresAt.getTime() <= verifiedAt.getTime()
-				) {
+				if (device.status !== 'pending' || device.revokedAt !== null || device.applicationId !== applicationId || device.expiresAt.getTime() <= verifiedAt.getTime()) {
 					return null;
 				}
 
@@ -462,16 +369,10 @@ const createDeviceRepository = (
 			});
 		},
 
-		touchVerified: async (
-			userId,
-			deviceId,
-			seenAt
-		) => {
+		touchVerified: async (userId, deviceId, seenAt) => {
 			return firestore.transaction(async (transaction) => {
 				const path = getDevicePath(userId, deviceId);
-				const storedDevice = await transaction.get<StoredDevice>(
-					path
-				);
+				const storedDevice = await transaction.get<StoredDevice>(path);
 
 				if (!storedDevice) {
 					return null;
@@ -479,11 +380,7 @@ const createDeviceRepository = (
 
 				const device = toOwnedDevice(storedDevice, userId);
 
-				if (
-					device.status !== 'verified' ||
-					device.revokedAt !== null ||
-					device.expiresAt.getTime() <= seenAt.getTime()
-				) {
+				if (device.status !== 'verified' || device.revokedAt !== null || device.expiresAt.getTime() <= seenAt.getTime()) {
 					return null;
 				}
 
@@ -492,27 +389,16 @@ const createDeviceRepository = (
 					lastSeenAt: seenAt
 				};
 
-				transaction.update<StoredDevice>(
-					path,
-					{
-						lastSeen: seenAt
-					}
-				);
+				transaction.update<StoredDevice>(path, { lastSeen: seenAt });
 
 				return updatedDevice;
 			});
 		},
 
-		rename: async (
-			userId,
-			deviceId,
-			displayName
-		) => {
+		rename: async (userId, deviceId, displayName) => {
 			return firestore.transaction(async (transaction) => {
 				const path = getDevicePath(userId, deviceId);
-				const storedDevice = await transaction.get<StoredDevice>(
-					path
-				);
+				const storedDevice = await transaction.get<StoredDevice>(path);
 
 				if (!storedDevice) {
 					return null;
@@ -520,10 +406,7 @@ const createDeviceRepository = (
 
 				const device = toOwnedDevice(storedDevice, userId);
 
-				if (
-					device.status === 'revoked' ||
-					device.revokedAt !== null
-				) {
+				if (device.status === 'revoked' || device.revokedAt !== null) {
 					return null;
 				}
 
@@ -532,25 +415,16 @@ const createDeviceRepository = (
 					displayName
 				};
 
-				transaction.update<StoredDevice>(
-					path,
-					{ displayName }
-				);
+				transaction.update<StoredDevice>(path, { displayName });
 
 				return renamedDevice;
 			});
 		},
 
-		revoke: async (
-			userId,
-			deviceId,
-			revokedAt
-		) => {
+		revoke: async (userId, deviceId, revokedAt) => {
 			return firestore.transaction(async (transaction) => {
 				const path = getDevicePath(userId, deviceId);
-				const storedDevice = await transaction.get<StoredDevice>(
-					path
-				);
+				const storedDevice = await transaction.get<StoredDevice>(path);
 
 				if (!storedDevice) {
 					return null;
@@ -568,13 +442,7 @@ const createDeviceRepository = (
 					revokedAt
 				};
 
-				transaction.update<StoredDevice>(
-					path,
-					{
-						status: 'revoked',
-						revoked: revokedAt
-					}
-				);
+				transaction.update<StoredDevice>(path, { status: 'revoked', revoked: revokedAt });
 
 				return revokedDevice;
 			});

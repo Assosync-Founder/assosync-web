@@ -1,26 +1,13 @@
 'use client';
 
-import {
-	type FormEvent,
-	useEffect,
-	useState
-} from 'react';
-import type {
-	ConfirmDeviceViewProps
-} from '@/types/auth';
+import { type FormEvent, useEffect, useState } from 'react';
+import type { ConfirmDeviceViewProps } from '@/types/auth';
 
 const VERIFICATION_CODE_PATTERN = /^\d{6}$/u;
 
 /** Reads a safe authentication error code from an API response. */
-const readErrorCode = (
-	value: unknown
-): string | null => {
-	if (
-		typeof value !== 'object' ||
-		value === null ||
-		!('error' in value) ||
-		typeof value.error !== 'string'
-	) {
+const readErrorCode = (value: unknown): string | null => {
+	if (typeof value !== 'object' || value === null || !('error' in value) || typeof value.error !== 'string') {
 		return null;
 	}
 
@@ -28,17 +15,13 @@ const readErrorCode = (
 };
 
 /** Reads a positive retry delay from an API response. */
-const readRetryAfterSeconds = (
-	value: unknown
-): number | null => {
-	if (
-		typeof value !== 'object' ||
+const readRetryAfterSeconds = (value: unknown): number | null => {
+	if (typeof value !== 'object' ||
 		value === null ||
 		!('retryAfterSeconds' in value) ||
 		typeof value.retryAfterSeconds !== 'number' ||
 		!Number.isSafeInteger(value.retryAfterSeconds) ||
-		value.retryAfterSeconds <= 0
-	) {
+		value.retryAfterSeconds <= 0) {
 		return null;
 	}
 
@@ -46,9 +29,7 @@ const readRetryAfterSeconds = (
 };
 
 /** Determines whether authentication must restart from the product. */
-const isTerminalErrorCode = (
-	errorCode: string | null
-): boolean => {
+const isTerminalErrorCode = (errorCode: string | null): boolean => {
 	return (
 		errorCode === 'verification_expired' ||
 		errorCode === 'verification_locked' ||
@@ -70,20 +51,14 @@ const ConfirmDeviceView = ({
 	restartUri
 }: ConfirmDeviceViewProps) => {
 	const [code, setCode] = useState('');
-	const [error, setError] = useState<string | null>(
-		null
-	);
-	const [isSubmitting, setIsSubmitting] =
-		useState(false);
-	const [isRedirecting, setIsRedirecting] =
-		useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isRedirecting, setIsRedirecting] = useState(false);
 	const [isResending, setIsResending] = useState(false);
 	const [isCancelling, setIsCancelling] = useState(false);
 	const [isTerminal, setIsTerminal] = useState(false);
-	const [resendLimitReached, setResendLimitReached] =
-		useState(false);
-	const [retryAfterSeconds, setRetryAfterSeconds] =
-		useState(0);
+	const [resendLimitReached, setResendLimitReached] = useState(false);
+	const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
 
 	useEffect(() => {
 		if (retryAfterSeconds <= 0) {
@@ -109,19 +84,11 @@ const ConfirmDeviceView = ({
 		submitLabel = 'Vérification…';
 	}
 
-	const handleSubmit = async (
-		event: FormEvent<HTMLFormElement>
-	): Promise<void> => {
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
 		event.preventDefault();
 
-		if (
-			isSubmitting ||
-			isRedirecting ||
-			!VERIFICATION_CODE_PATTERN.test(code)
-		) {
-			setError(
-				'Saisissez le code à six chiffres reçu par email.'
-			);
+		if (isSubmitting || isRedirecting || !VERIFICATION_CODE_PATTERN.test(code)) {
+			setError('Saisissez le code à six chiffres reçu par email.');
 
 			return;
 		}
@@ -154,13 +121,9 @@ const ConfirmDeviceView = ({
 
 				if (isTerminalErrorCode(errorCode)) {
 					setIsTerminal(true);
-					setError(
-						'Cette vérification n’est plus valide. Recommencez la connexion depuis votre application.'
-					);
+					setError('Cette vérification n’est plus valide. Recommencez la connexion depuis votre application.');
 				} else {
-					setError(
-						'Le code saisi est incorrect ou ne correspond plus à cette connexion.'
-					);
+					setError('Le code saisi est incorrect ou ne correspond plus à cette connexion.');
 				}
 
 				setIsSubmitting(false);
@@ -168,17 +131,13 @@ const ConfirmDeviceView = ({
 				return;
 			}
 
-			if (
-				typeof result !== 'object' ||
+			if (typeof result !== 'object' ||
 				result === null ||
 				!('status' in result) ||
 				result.status !== 'authorization_ready' ||
 				!('redirectUri' in result) ||
-				typeof result.redirectUri !== 'string'
-			) {
-				setError(
-					'Le code est incorrect, expiré ou ne correspond plus à cette connexion.'
-				);
+				typeof result.redirectUri !== 'string') {
+				setError('Le code est incorrect, expiré ou ne correspond plus à cette connexion.');
 				setIsSubmitting(false);
 
 				return;
@@ -188,28 +147,21 @@ const ConfirmDeviceView = ({
 
 			window.location.replace(result.redirectUri);
 		} catch (error: unknown) {
-			console.error(
-				'Device confirmation request failed.',
-				error
-			);
+			console.error('Device confirmation request failed.', error);
 
-			setError(
-				'La confirmation est momentanément indisponible. Réessayez.'
-			);
+			setError('La confirmation est momentanément indisponible. Réessayez.');
 
 			setIsSubmitting(false);
 		}
 	};
 
 	const handleResend = async (): Promise<void> => {
-		if (
-			isResending ||
+		if (isResending ||
 			isSubmitting ||
 			isRedirecting ||
 			isTerminal ||
 			resendLimitReached ||
-			retryAfterSeconds > 0
-		) {
+			retryAfterSeconds > 0) {
 			return;
 		}
 
@@ -244,26 +196,17 @@ const ConfirmDeviceView = ({
 
 				if (isTerminalErrorCode(errorCode)) {
 					setIsTerminal(true);
-					setError(
-						'Cette vérification n’est plus valide. Recommencez la connexion depuis votre application.'
-					);
-				} else if (
-					errorCode === 'verification_rate_limited'
-				) {
-					setError(
-						'Trop de demandes ont été effectuées. L’envoi de nouveaux codes est temporairement suspendu.'
-					);
+					setError('Cette vérification n’est plus valide. Recommencez la connexion depuis votre application.');
+				} else if (errorCode === 'verification_rate_limited') {
+					setError('Trop de demandes ont été effectuées. L’envoi de nouveaux codes est temporairement suspendu.');
 				} else {
-					setError(
-						'Un nouveau code ne peut pas encore être demandé.'
-					);
+					setError('Un nouveau code ne peut pas encore être demandé.');
 				}
 
 				return;
 			}
 
-			if (
-				typeof result !== 'object' ||
+			if (typeof result !== 'object' ||
 				result === null ||
 				!('status' in result) ||
 				result.status !== 'resent' ||
@@ -274,15 +217,10 @@ const ConfirmDeviceView = ({
 				!('retryAfterSeconds' in result) ||
 				typeof result.retryAfterSeconds !== 'number' ||
 				!Number.isSafeInteger(result.retryAfterSeconds) ||
-				result.retryAfterSeconds <= 0
-			) {
-				console.error(
-					'Email resend response is invalid.'
-				);
+				result.retryAfterSeconds <= 0) {
+				console.error('Email resend response is invalid.');
 
-				setError(
-					'L’envoi d’un nouveau code est momentanément indisponible.'
-				);
+				setError('L’envoi d’un nouveau code est momentanément indisponible.');
 
 				return;
 			}
@@ -291,22 +229,15 @@ const ConfirmDeviceView = ({
 
 			if (result.resendLimitReached) {
 				setResendLimitReached(true);
-				setError(
-					'Un dernier code vient d’être envoyé. Aucun nouvel email ne peut être demandé pour le moment.'
-				);
+				setError('Un dernier code vient d’être envoyé. Aucun nouvel email ne peut être demandé pour le moment.');
 			} else {
 				setRetryAfterSeconds(result.retryAfterSeconds);
 				setError('Un nouveau code vient d’être envoyé.');
 			}
 		} catch (error: unknown) {
-			console.error(
-				'Device verification resend failed.',
-				error
-			);
+			console.error('Device verification resend failed.', error);
 
-			setError(
-				'L’envoi d’un nouveau code est momentanément indisponible.'
-			);
+			setError('L’envoi d’un nouveau code est momentanément indisponible.');
 		} finally {
 			setIsResending(false);
 		}

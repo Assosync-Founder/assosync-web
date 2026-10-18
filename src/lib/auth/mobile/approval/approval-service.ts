@@ -43,16 +43,13 @@ class MobileApprovalService {
 	 * @returns The issued browser and mobile approval secrets.
 	 * @throws {AuthError} When no notification can be delivered.
 	 */
-	readonly start = async (
-		input: StartDeviceVerificationInput
-	): Promise<IssuedMobileDeviceVerification> => {
+	readonly start = async (input: StartDeviceVerificationInput): Promise<IssuedMobileDeviceVerification> => {
 		const issued = await this.verifications.startMobile(input);
 
 		let deliverySucceeded = false;
 
 		try {
-			const delivery =
-				await this.mobileNotifications.sendToActiveMobileInstallations({
+			const delivery = await this.mobileNotifications.sendToActiveMobileInstallations({
 					userId: input.userId,
 					notification: {
 						title: 'Nouvelle demande de connexion',
@@ -67,10 +64,7 @@ class MobileApprovalService {
 
 			deliverySucceeded = delivery.successCount > 0;
 		} catch (error: unknown) {
-			logAuthServerError(
-				error,
-				'mobile_approval_notification'
-			);
+			logAuthServerError(error, 'mobile_approval_notification');
 		}
 
 		if (!deliverySucceeded) {
@@ -82,16 +76,10 @@ class MobileApprovalService {
 					applicationId: input.applicationId
 				});
 			} catch (error: unknown) {
-				logAuthServerError(
-					error,
-					'mobile_approval_cleanup'
-				);
+				logAuthServerError(error, 'mobile_approval_cleanup');
 			}
 
-			throw new AuthError(
-				'verification_mode_unavailable',
-				'No registered mobile installation accepted the notification.'
-			);
+			throw new AuthError('verification_mode_unavailable', 'No registered mobile installation accepted the notification.');
 		}
 
 		return issued;
@@ -103,28 +91,16 @@ class MobileApprovalService {
 	 * @returns The safe browser authentication context.
 	 * @throws {AuthError} When the installation or approval is invalid.
 	 */
-	readonly getRequest = async (
-		input: GetMobileApprovalRequestInput
-	): Promise<MobileApprovalRequest> => {
+	readonly getRequest = async (input: GetMobileApprovalRequestInput): Promise<MobileApprovalRequest> => {
 		await this.assertActiveMobileInstallation(input);
 
-		const verification =
-			await this.verifications.getMobileApproval(input);
+		const verification = await this.verifications.getMobileApproval(input);
 
-		if (
-			verification.status === 'finalizing' ||
-			verification.status === 'consumed'
-		) {
-			throw new AuthError(
-				'verification_invalid',
-				'The mobile approval can no longer be displayed.'
-			);
+		if (verification.status === 'finalizing' || verification.status === 'consumed') {
+			throw new AuthError('verification_invalid', 'The mobile approval can no longer be displayed.');
 		}
 
-		const device = await this.devices.findById(
-			input.userId,
-			verification.deviceId
-		);
+		const device = await this.devices.findById(input.userId, verification.deviceId);
 
 		return {
 			verificationId: verification.id,
@@ -150,13 +126,10 @@ class MobileApprovalService {
 	 * @returns The resulting verification state.
 	 * @throws {AuthError} When the installation or approval is invalid.
 	 */
-	readonly respond = async (
-		input: RespondMobileApprovalInput
-	): Promise<DeviceVerification> => {
+	readonly respond = async (input: RespondMobileApprovalInput): Promise<DeviceVerification> => {
 		await this.assertActiveMobileInstallation(input);
 
-		const currentVerification =
-			await this.verifications.getMobileApproval(input);
+		const currentVerification = await this.verifications.getMobileApproval(input);
 
 		if (input.decision === 'approve') {
 			const approvedVerification = await this.verifications.approveMobile({
@@ -200,8 +173,7 @@ class MobileApprovalService {
 			deviceId: rejectedVerification.deviceId,
 			verificationId: rejectedVerification.id,
 			trigger: 'mobile_approval_rejected',
-			occurredAt:
-				rejectedVerification.rejectedAt ?? new Date(),
+			occurredAt: rejectedVerification.rejectedAt ?? new Date(),
 			penaltyLevel: null
 		});
 
@@ -213,20 +185,11 @@ class MobileApprovalService {
 	 * @param input - Authenticated mobile installation identity.
 	 * @throws {AuthError} When the installation is not registered and active.
 	 */
-	private readonly assertActiveMobileInstallation = async (
-		input: GetMobileApprovalRequestInput
-	): Promise<void> => {
-		const mobileInstallation =
-			await this.mobileInstallations.findActiveForApproval(
-				input.userId,
-				input.mobileInstallationId
-			);
+	private readonly assertActiveMobileInstallation = async (input: GetMobileApprovalRequestInput): Promise<void> => {
+		const mobileInstallation = await this.mobileInstallations.findActiveForApproval(input.userId, input.mobileInstallationId);
 
 		if (!mobileInstallation) {
-			throw new AuthError(
-				'verification_invalid',
-				'The mobile installation cannot answer authentication approvals.'
-			);
+			throw new AuthError('verification_invalid', 'The mobile installation cannot answer authentication approvals.');
 		}
 	};
 }

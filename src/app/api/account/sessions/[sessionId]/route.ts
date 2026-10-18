@@ -1,15 +1,6 @@
-import {
-	NextRequest,
-	NextResponse
-} from 'next/server';
-import {
-	clearSessionCookies
-} from '@/lib/auth/http/auth-cookies';
-import {
-	assertSameOrigin,
-	createAuthErrorResponse,
-	readAuthenticationIdentifier
-} from '@/lib/auth/http/auth-http';
+import { NextRequest, NextResponse } from 'next/server';
+import { clearSessionCookies } from '@/lib/auth/http/auth-cookies';
+import { assertSameOrigin, createAuthErrorResponse, readAuthenticationIdentifier } from '@/lib/auth/http/auth-http';
 import resolveAccountRequestSession from '@/lib/auth/http/auth-request-session';
 import sessionManagementService from '@/lib/auth/session/session-management-server';
 import type { SessionRouteContext } from '@/types/auth';
@@ -19,10 +10,7 @@ import type { SessionRouteContext } from '@/types/auth';
  * @param context - Dynamic session route context.
  * @returns The revoked public session.
  */
-export const DELETE = async (
-	request: NextRequest,
-	context: SessionRouteContext
-): Promise<Response> => {
+export const DELETE = async (request: NextRequest, context: SessionRouteContext): Promise<Response> => {
 	try {
 		assertSameOrigin(request);
 
@@ -31,15 +19,9 @@ export const DELETE = async (
 			context.params
 		]);
 
-		const sessionId = readAuthenticationIdentifier(
-			parameters.sessionId
-		);
+		const sessionId = readAuthenticationIdentifier(parameters.sessionId);
 
-		const session = await sessionManagementService.revoke(
-			currentSession.userId,
-			sessionId,
-			currentSession.id
-		);
+		const session = await sessionManagementService.revoke(currentSession.userId, sessionId, currentSession.id);
 
 		const response = NextResponse.json({ session });
 

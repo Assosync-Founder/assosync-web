@@ -25,17 +25,13 @@ const authWarningService = new AuthWarningService(
 				applicationId: 'calendis',
 				emailType: 'calendis',
 				displayName: 'Calendis',
-				from:
-					Env.private.authEmail.from.noReplyCalendis ??
-					''
+				from: Env.private.authEmail.from.noReplyCalendis ?? ''
 			},
 			{
 				applicationId: 'collectineo',
 				emailType: 'collectineo',
 				displayName: 'Collectineo',
-				from:
-					Env.private.authEmail.from.noReplyCollectineo ??
-					''
+				from: Env.private.authEmail.from.noReplyCollectineo ?? ''
 			}
 		]
 	}

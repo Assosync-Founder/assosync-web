@@ -5,21 +5,15 @@ import ConfirmDeviceView from '@/components/account/device/ConfirmDeviceView';
 import webAuthorizationService from '@/lib/auth/web/authorization-server';
 import type { WebAuthorizationRequest } from '@/types/auth';
 
-const AUTHENTICATION_IDENTIFIER_PATTERN =
-	/^[A-Za-z0-9_-]{1,128}$/u;
+const AUTHENTICATION_IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{1,128}$/u;
 
 /**
  * Validates an authentication identifier received through the URL.
  * @param value - Query parameter value.
  * @returns The validated identifier or null.
  */
-const readIdentifier = (
-	value: string | string[] | undefined
-): string | null => {
-	if (
-		typeof value !== 'string' ||
-		!AUTHENTICATION_IDENTIFIER_PATTERN.test(value)
-	) {
+const readIdentifier = (value: string | string[] | undefined): string | null => {
+	if (typeof value !== 'string' || !AUTHENTICATION_IDENTIFIER_PATTERN.test(value)) {
 		return null;
 	}
 
@@ -32,15 +26,9 @@ const readIdentifier = (
  * @param browserToken - Browser authorization secret.
  * @returns The active authorization or null.
  */
-const resolveActiveAuthorization = async (
-	authorizationId: string,
-	browserToken: string
-): Promise<WebAuthorizationRequest | null> => {
+const resolveActiveAuthorization = async (authorizationId: string, browserToken: string): Promise<WebAuthorizationRequest | null> => {
 	try {
-		return await webAuthorizationService.resolve(
-			authorizationId,
-			browserToken
-		);
+		return await webAuthorizationService.resolve(authorizationId, browserToken);
 	} catch (error: unknown) {
 		console.warn(
 			'Rejected access to the device confirmation page.',
@@ -76,10 +64,7 @@ const ConfirmDevicePage = async ({
 		redirect(authConfig.routes.accountLogin);
 	}
 
-	const authorization = await resolveActiveAuthorization(
-		authorizationId,
-		authorizationToken
-	);
+	const authorization = await resolveActiveAuthorization(authorizationId, authorizationToken);
 
 	if (!authorization) {
 		redirect(authConfig.routes.accountLogin);

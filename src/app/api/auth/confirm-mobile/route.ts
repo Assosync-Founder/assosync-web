@@ -2,10 +2,7 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import authConfig from '@/config/auth';
 import authenticationService from '@/lib/auth/authentication/authentication-server';
-import {
-	clearDeviceVerificationCookie,
-	setSessionCookies
-} from '@/lib/auth/http/auth-cookies';
+import { clearDeviceVerificationCookie, setSessionCookies } from '@/lib/auth/http/auth-cookies';
 import {
 	assertSameOrigin,
 	createAuthErrorResponse,
@@ -20,9 +17,7 @@ import {
  * @param request - Incoming browser polling request.
  * @returns The completed session or a stable pending/rejected error.
  */
-export const POST = async (
-	request: NextRequest
-): Promise<Response> => {
+export const POST = async (request: NextRequest): Promise<Response> => {
 	try {
 		assertSameOrigin(request);
 
@@ -30,27 +25,11 @@ export const POST = async (
 		const applicationId = resolveApplicationId(request);
 		const body = await readJsonBody(request);
 		const idToken = readRequiredString(body, 'idToken');
-		const deviceId = readAuthenticationIdentifier(
-			body.deviceId
-		);
+		const deviceId = readAuthenticationIdentifier(body.deviceId);
 
-		const verificationId = readAuthenticationIdentifier(
-			body.verificationId
-		);
-
-		const deviceToken = readRequiredAuthCookie(
-			cookieStore.get(
-				authConfig.cookieNames.device
-			)?.value,
-			'verification_invalid'
-		);
-
-		const browserToken = readRequiredAuthCookie(
-			cookieStore.get(
-				authConfig.cookieNames.deviceVerification
-			)?.value,
-			'verification_invalid'
-		);
+		const verificationId = readAuthenticationIdentifier(body.verificationId);
+		const deviceToken = readRequiredAuthCookie(cookieStore.get(authConfig.cookieNames.device)?.value, 'verification_invalid');
+		const browserToken = readRequiredAuthCookie(cookieStore.get(authConfig.cookieNames.deviceVerification)?.value, 'verification_invalid');
 
 		const issuedSession = await authenticationService.completeMobile({
 			idToken,
@@ -61,10 +40,7 @@ export const POST = async (
 			browserToken
 		});
 
-		const response = NextResponse.json({
-			status: 'session_ready',
-			expiresAt: issuedSession.session.expiresAt.toISOString()
-		});
+		const response = NextResponse.json({ status: 'session_ready', expiresAt: issuedSession.session.expiresAt.toISOString() });
 
 		setSessionCookies(response, issuedSession);
 		clearDeviceVerificationCookie(response);

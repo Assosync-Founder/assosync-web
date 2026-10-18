@@ -10,26 +10,17 @@ import type { AuthCookie } from '@/types/auth';
  * @throws {TypeError} When the cookie name or path is invalid.
  * @throws {RangeError} When the lifetime is invalid.
  */
-export const createAuthCookie = (
-	name: string,
-	value: string,
-	maxAge: number,
-	path = '/'
-): AuthCookie => {
+export const createAuthCookie = (name: string, value: string, maxAge: number, path = '/'): AuthCookie => {
 	if (!name.trim()) {
 		throw new TypeError('The authentication cookie name is required.');
 	}
 
 	if (!path.startsWith('/')) {
-		throw new TypeError(
-			'The authentication cookie path must start with a slash.'
-		);
+		throw new TypeError('The authentication cookie path must start with a slash.');
 	}
 
 	if (!Number.isInteger(maxAge) || maxAge < 0) {
-		throw new RangeError(
-			'The authentication cookie lifetime must be a non-negative integer.'
-		);
+		throw new RangeError('The authentication cookie lifetime must be a non-negative integer.');
 	}
 
 	return {
@@ -49,9 +40,6 @@ export const createAuthCookie = (
  * @param path - Cookie request path.
  * @returns An expired cookie descriptor.
  */
-export const clearAuthCookie = (
-	name: string,
-	path = '/'
-): AuthCookie => {
+export const clearAuthCookie = (name: string, path = '/'): AuthCookie => {
 	return createAuthCookie(name, '', 0, path);
 };

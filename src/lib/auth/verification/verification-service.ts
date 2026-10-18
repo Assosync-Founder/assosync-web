@@ -4,12 +4,7 @@ import SecurityEventService from '@/lib/auth/audit/security-event-service';
 import DeviceService from '@/lib/auth/device/device-service';
 import { logAuthServerError } from '@/lib/auth/shared/auth-logger';
 import AuthError from '@/lib/auth/shared/auth-error';
-import {
-	secureTokenGenerator,
-	secureVerificationCodeGenerator,
-	sha256TokenHasher,
-	systemClock
-} from '@/lib/auth/shared/runtime-server';
+import { secureTokenGenerator, secureVerificationCodeGenerator, sha256TokenHasher, systemClock } from '@/lib/auth/shared/runtime-server';
 import type {
 	ApproveMobileVerificationInput,
 	AuthWarningNotifier,
@@ -78,51 +73,24 @@ class VerificationService {
 		private readonly codeGenerator: VerificationCodeGenerator =
 		secureVerificationCodeGenerator
 	) {
-		if (
-			!Number.isSafeInteger(options.lifetimeMs) ||
-			options.lifetimeMs <= 0
-		) {
-			throw new RangeError(
-				'Device verification lifetime must be a positive integer.'
-			);
+		if (!Number.isSafeInteger(options.lifetimeMs) || options.lifetimeMs <= 0) {
+			throw new RangeError('Device verification lifetime must be a positive integer.');
 		}
 
-		if (
-			!Number.isSafeInteger(options.maxEmailAttempts) ||
-			options.maxEmailAttempts <= 0
-		) {
-			throw new RangeError(
-				'Maximum email attempts must be a positive integer.'
-			);
+		if (!Number.isSafeInteger(options.maxEmailAttempts) || options.maxEmailAttempts <= 0) {
+			throw new RangeError('Maximum email attempts must be a positive integer.');
 		}
 
-		if (
-			!Number.isSafeInteger(options.maxEmailResends) ||
-			options.maxEmailResends <= 0
-		) {
-			throw new RangeError(
-				'Maximum email resends must be a positive integer.'
-			);
+		if (!Number.isSafeInteger(options.maxEmailResends) || options.maxEmailResends <= 0) {
+			throw new RangeError('Maximum email resends must be a positive integer.');
 		}
 
-		if (
-			!Number.isSafeInteger(options.emailResendCooldownMs) ||
-			options.emailResendCooldownMs <= 0
-		) {
-			throw new RangeError(
-				'Email resend cooldown must be a positive integer.'
-			);
+		if (!Number.isSafeInteger(options.emailResendCooldownMs) || options.emailResendCooldownMs <= 0) {
+			throw new RangeError('Email resend cooldown must be a positive integer.');
 		}
 
-		if (
-			!Number.isSafeInteger(
-				options.finalizationRecoveryMs
-			) ||
-			options.finalizationRecoveryMs <= 0
-		) {
-			throw new RangeError(
-				'Finalization recovery lifetime must be a positive integer.'
-			);
+		if (!Number.isSafeInteger(options.finalizationRecoveryMs) || options.finalizationRecoveryMs <= 0) {
+			throw new RangeError('Finalization recovery lifetime must be a positive integer.');
 		}
 	}
 
@@ -132,13 +100,8 @@ class VerificationService {
 	 * @returns Browser secret and code to send by email.
 	 * @throws {AuthError} When email verification is unavailable.
 	 */
-	readonly startEmail = async (
-		input: StartDeviceVerificationInput
-	): Promise<IssuedEmailDeviceVerification> => {
-		await this.assertModeAvailable(
-			input,
-			'email_code'
-		);
+	readonly startEmail = async (input: StartDeviceVerificationInput): Promise<IssuedEmailDeviceVerification> => {
+		await this.assertModeAvailable(input, 'email_code');
 
 		await this.assertPendingDevice(input);
 
@@ -147,9 +110,7 @@ class VerificationService {
 		const emailCode = this.codeGenerator.generate();
 
 		if (!VERIFICATION_CODE_PATTERN.test(emailCode)) {
-			throw new Error(
-				'The verification code generator returned an invalid code.'
-			);
+			throw new Error('The verification code generator returned an invalid code.');
 		}
 
 		const requestedAt = this.clock.now();
@@ -167,10 +128,7 @@ class VerificationService {
 				browserToken,
 				input,
 				'email_code',
-				this.codeHasher.hash(
-					emailCode,
-					verificationId
-				),
+				this.codeHasher.hash(emailCode, verificationId),
 				null
 			)
 		);
@@ -188,13 +146,8 @@ class VerificationService {
 	 * @returns Browser and mobile approval secrets.
 	 * @throws {AuthError} When mobile approval is unavailable.
 	 */
-	readonly startMobile = async (
-		input: StartDeviceVerificationInput
-	): Promise<IssuedMobileDeviceVerification> => {
-		await this.assertModeAvailable(
-			input,
-			'mobile_approval'
-		);
+	readonly startMobile = async (input: StartDeviceVerificationInput): Promise<IssuedMobileDeviceVerification> => {
+		await this.assertModeAvailable(input, 'mobile_approval');
 
 		await this.assertPendingDevice(input);
 
@@ -226,51 +179,26 @@ class VerificationService {
 	 * @returns The approved verification.
 	 * @throws {AuthError} When the verification cannot be approved.
 	 */
-	readonly confirmEmail = async (
-		input: ConfirmEmailCodeInput
-	): Promise<DeviceVerification> => {
-		this.assertRequiredValue(
-			input.userId,
-			'The Firebase user identifier is required.'
-		);
+	readonly confirmEmail = async (input: ConfirmEmailCodeInput): Promise<DeviceVerification> => {
+		this.assertRequiredValue(input.userId, 'The Firebase user identifier is required.');
 
-		this.assertRequiredValue(
-			input.verificationId,
-			'The verification identifier is required.'
-		);
+		this.assertRequiredValue(input.verificationId, 'The verification identifier is required.');
 
-		this.assertRequiredValue(
-			input.browserToken,
-			'The browser verification token is required.'
-		);
+		this.assertRequiredValue(input.browserToken, 'The browser verification token is required.');
 
-		this.assertRequiredValue(
-			input.applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(input.applicationId, 'The application identifier is required.');
 
-		this.assertRequiredValue(
-			input.deviceId,
-			'The device identifier is required.'
-		);
+		this.assertRequiredValue(input.deviceId, 'The device identifier is required.');
 
 		if (!VERIFICATION_CODE_PATTERN.test(input.code)) {
-			throw new AuthError(
-				'verification_invalid',
-				'The verification code is invalid.'
-			);
+			throw new AuthError('verification_invalid', 'The verification code is invalid.');
 		}
 
 		const result = await this.repository.attemptEmailCode({
 			userId: input.userId,
 			verificationId: input.verificationId,
-			browserTokenHash: this.tokenHasher.hash(
-				input.browserToken
-			),
-			codeHash: this.codeHasher.hash(
-				input.code,
-				input.verificationId
-			),
+			browserTokenHash: this.tokenHasher.hash(input.browserToken),
+			codeHash: this.codeHasher.hash(input.code, input.verificationId),
 			applicationId: input.applicationId,
 			attemptedAt: this.clock.now()
 		});
@@ -289,10 +217,7 @@ class VerificationService {
 					affectedCount: 1
 				});
 
-				throw new AuthError(
-					'verification_expired',
-					'The device verification has expired.'
-				);
+				throw new AuthError('verification_expired', 'The device verification has expired.');
 			}
 
 			case 'locked': {
@@ -305,8 +230,7 @@ class VerificationService {
 						applicationId: input.applicationId,
 						deviceId: input.deviceId,
 						sessionId: null,
-						affectedCount:
-							this.options.maxEmailAttempts
+						affectedCount: this.options.maxEmailAttempts
 					});
 
 					await this.authWarnings.notify({
@@ -320,23 +244,14 @@ class VerificationService {
 					});
 				}
 
-				throw new AuthError(
-					'verification_locked',
-					'Too many invalid verification attempts.'
-				);
+				throw new AuthError('verification_locked', 'Too many invalid verification attempts.');
 			}
 
 			case 'invalid':
-				throw new AuthError(
-					'verification_invalid',
-					`The verification code is invalid. ${result.remainingAttempts} attempts remain.`
-				);
+				throw new AuthError('verification_invalid', `The verification code is invalid. ${result.remainingAttempts} attempts remain.`);
 
 			case 'not_found':
-				throw new AuthError(
-					'verification_expired',
-					'The device verification is no longer available.'
-				);
+				throw new AuthError('verification_expired', 'The device verification is no longer available.');
 		}
 	};
 
@@ -346,17 +261,13 @@ class VerificationService {
 	 * @returns The updated verification and replacement code.
 	 * @throws {AuthError} When resending is unavailable or throttled.
 	 */
-	readonly resendEmail = async (
-		input: ResendEmailVerificationInput
-	): Promise<IssuedEmailDeviceVerification> => {
+	readonly resendEmail = async (input: ResendEmailVerificationInput): Promise<IssuedEmailDeviceVerification> => {
 		this.assertEmailManagementInput(input);
 
 		const emailCode = this.codeGenerator.generate();
 
 		if (!VERIFICATION_CODE_PATTERN.test(emailCode)) {
-			throw new Error(
-				'The verification code generator returned an invalid code.'
-			);
+			throw new Error('The verification code generator returned an invalid code.');
 		}
 
 		const sentAt = this.clock.now();
@@ -373,17 +284,10 @@ class VerificationService {
 			verificationId: input.verificationId,
 			applicationId: input.applicationId,
 			deviceId: input.deviceId,
-			browserTokenHash: this.tokenHasher.hash(
-				input.browserToken
-			),
-			codeHash: this.codeHasher.hash(
-				emailCode,
-				input.verificationId
-			),
+			browserTokenHash: this.tokenHasher.hash(input.browserToken),
+			codeHash: this.codeHasher.hash(emailCode, input.verificationId),
 			sentAt,
-			expiresAt: new Date(
-				sentAt.getTime() + this.options.lifetimeMs
-			),
+			expiresAt: new Date(sentAt.getTime() + this.options.lifetimeMs),
 			cooldownMs: this.options.emailResendCooldownMs,
 			maxResends: this.options.maxEmailResends
 		});
@@ -397,11 +301,7 @@ class VerificationService {
 				};
 
 			case 'cooldown':
-				throw new AuthError(
-					'verification_resend_too_soon',
-					`A new verification email can be requested in ${result.retryAfterMs} milliseconds.`,
-					Math.ceil(result.retryAfterMs / 1_000)
-				);
+				throw new AuthError('verification_resend_too_soon', `A new verification email can be requested in ${result.retryAfterMs} milliseconds.`, Math.ceil(result.retryAfterMs / 1_000));
 
 			case 'limit_reached':
 				const retryAfterMs = await this.rateLimits.penalize({
@@ -411,17 +311,10 @@ class VerificationService {
 					requestedAt: sentAt
 				});
 
-				throw new AuthError(
-					'verification_rate_limited',
-					'Verification email delivery is temporarily limited.',
-					Math.ceil(retryAfterMs / 1_000)
-				);
+				throw new AuthError('verification_rate_limited', 'Verification email delivery is temporarily limited.', Math.ceil(retryAfterMs / 1_000));
 
 			case 'not_found':
-				throw new AuthError(
-					'verification_expired',
-					'The email verification is no longer available.'
-				);
+				throw new AuthError('verification_expired', 'The email verification is no longer available.');
 		}
 	};
 
@@ -431,30 +324,16 @@ class VerificationService {
 	 * @param issued - Reserved verification and replacement code.
 	 * @returns A promise resolved after the reservation cleanup attempt.
 	 */
-	readonly completeEmailResend = async (
-		input: ResendEmailVerificationInput,
-		issued: IssuedEmailDeviceVerification
-	): Promise<void> => {
-		const completed =
-			await this.repository.completeEmailCodeResend(
-				this.createEmailResendTransition(input, issued)
-			);
+	readonly completeEmailResend = async (input: ResendEmailVerificationInput, issued: IssuedEmailDeviceVerification): Promise<void> => {
+		const completed = await this.repository.completeEmailCodeResend(this.createEmailResendTransition(input, issued));
 
 		if (!completed) {
-			logAuthServerError(
-				new Error(
-					'The email resend reservation could not be completed.'
-				),
-				'email_resend_completion'
-			);
+			logAuthServerError(new Error('The email resend reservation could not be completed.'), 'email_resend_completion');
 
 			return;
 		}
 
-		if (
-			issued.verification.emailResendCount >=
-			this.options.maxEmailResends
-		) {
+		if (issued.verification.emailResendCount >= this.options.maxEmailResends) {
 			await this.rateLimits.penalize({
 				userId: input.userId,
 				applicationId: input.applicationId,
@@ -470,22 +349,11 @@ class VerificationService {
 	 * @param issued - Reserved verification and replacement code.
 	 * @returns A promise resolved after the rollback attempt.
 	 */
-	readonly rollbackEmailResend = async (
-		input: ResendEmailVerificationInput,
-		issued: IssuedEmailDeviceVerification
-	): Promise<void> => {
-		const rolledBack =
-			await this.repository.rollbackEmailCodeResend(
-				this.createEmailResendTransition(input, issued)
-			);
+	readonly rollbackEmailResend = async (input: ResendEmailVerificationInput, issued: IssuedEmailDeviceVerification): Promise<void> => {
+		const rolledBack = await this.repository.rollbackEmailCodeResend(this.createEmailResendTransition(input, issued));
 
 		if (!rolledBack) {
-			logAuthServerError(
-				new Error(
-					'The email resend reservation could not be rolled back.'
-				),
-				'email_resend_rollback'
-			);
+			logAuthServerError(new Error('The email resend reservation could not be rolled back.'), 'email_resend_rollback');
 		}
 	};
 
@@ -494,9 +362,7 @@ class VerificationService {
 	 * @param input - Browser-bound email verification identity.
 	 * @returns A promise resolved after cancellation.
 	 */
-	readonly cancelEmail = async (
-		input: CancelEmailVerificationInput
-	): Promise<void> => {
+	readonly cancelEmail = async (input: CancelEmailVerificationInput): Promise<void> => {
 		this.assertEmailManagementInput(input);
 
 		const cancelled = await this.repository.cancelEmail({
@@ -504,9 +370,7 @@ class VerificationService {
 			verificationId: input.verificationId,
 			applicationId: input.applicationId,
 			deviceId: input.deviceId,
-			browserTokenHash: this.tokenHasher.hash(
-				input.browserToken
-			)
+			browserTokenHash: this.tokenHasher.hash(input.browserToken)
 		});
 
 		if (!cancelled) {
@@ -529,22 +393,14 @@ class VerificationService {
 	 * @param issued - Reserved verification and replacement code.
 	 * @returns The hashed resend transition.
 	 */
-	private readonly createEmailResendTransition = (
-		input: ResendEmailVerificationInput,
-		issued: IssuedEmailDeviceVerification
-	): EmailCodeResendTransitionInput => {
+	private readonly createEmailResendTransition = (input: ResendEmailVerificationInput, issued: IssuedEmailDeviceVerification): EmailCodeResendTransitionInput => {
 		return {
 			userId: input.userId,
 			verificationId: input.verificationId,
 			applicationId: input.applicationId,
 			deviceId: input.deviceId,
-			browserTokenHash: this.tokenHasher.hash(
-				input.browserToken
-			),
-			codeHash: this.codeHasher.hash(
-				issued.emailCode,
-				input.verificationId
-			)
+			browserTokenHash: this.tokenHasher.hash(input.browserToken),
+			codeHash: this.codeHasher.hash(issued.emailCode, input.verificationId)
 		};
 	};
 
@@ -554,44 +410,25 @@ class VerificationService {
 	 * @returns The approved verification.
 	 * @throws {AuthError} When the approval is invalid or expired.
 	 */
-	readonly approveMobile = async (
-		input: ApproveMobileVerificationInput
-	): Promise<DeviceVerification> => {
-		this.assertRequiredValue(
-			input.userId,
-			'The Firebase user identifier is required.'
-		);
+	readonly approveMobile = async (input: ApproveMobileVerificationInput): Promise<DeviceVerification> => {
+		this.assertRequiredValue(input.userId, 'The Firebase user identifier is required.');
 
-		this.assertRequiredValue(
-			input.verificationId,
-			'The verification identifier is required.'
-		);
+		this.assertRequiredValue(input.verificationId, 'The verification identifier is required.');
 
-		this.assertRequiredValue(
-			input.approvalToken,
-			'The mobile approval token is required.'
-		);
+		this.assertRequiredValue(input.approvalToken, 'The mobile approval token is required.');
 
-		this.assertRequiredValue(
-			input.applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(input.applicationId, 'The application identifier is required.');
 
 		const verification = await this.repository.approveMobile({
 			userId: input.userId,
 			verificationId: input.verificationId,
-			approvalTokenHash: this.tokenHasher.hash(
-				input.approvalToken
-			),
+			approvalTokenHash: this.tokenHasher.hash(input.approvalToken),
 			applicationId: input.applicationId,
 			approvedAt: this.clock.now()
 		});
 
 		if (!verification) {
-			throw new AuthError(
-				'verification_invalid',
-				'The mobile approval is invalid or expired.'
-			);
+			throw new AuthError('verification_invalid', 'The mobile approval is invalid or expired.');
 		}
 
 		return verification;
@@ -603,39 +440,22 @@ class VerificationService {
 	 * @returns The matching verification.
 	 * @throws {AuthError} When the request is invalid or expired.
 	 */
-	readonly getMobileApproval = async (
-		input: GetMobileApprovalRequestInput
-	): Promise<DeviceVerification> => {
-		this.assertRequiredValue(
-			input.userId,
-			'The Firebase user identifier is required.'
-		);
+	readonly getMobileApproval = async (input: GetMobileApprovalRequestInput): Promise<DeviceVerification> => {
+		this.assertRequiredValue(input.userId, 'The Firebase user identifier is required.');
 
-		this.assertRequiredValue(
-			input.verificationId,
-			'The verification identifier is required.'
-		);
+		this.assertRequiredValue(input.verificationId, 'The verification identifier is required.');
 
-		this.assertRequiredValue(
-			input.approvalToken,
-			'The mobile approval token is required.'
-		);
+		this.assertRequiredValue(input.approvalToken, 'The mobile approval token is required.');
 
-		const verification =
-			await this.repository.resolveMobileApproval({
+		const verification = await this.repository.resolveMobileApproval({
 				userId: input.userId,
 				verificationId: input.verificationId,
-				approvalTokenHash: this.tokenHasher.hash(
-					input.approvalToken
-				),
+				approvalTokenHash: this.tokenHasher.hash(input.approvalToken),
 				resolvedAt: this.clock.now()
 			});
 
 		if (!verification) {
-			throw new AuthError(
-				'verification_invalid',
-				'The mobile approval is invalid or expired.'
-			);
+			throw new AuthError('verification_invalid', 'The mobile approval is invalid or expired.');
 		}
 
 		return verification;
@@ -647,26 +467,18 @@ class VerificationService {
 	 * @returns The matching verification.
 	 * @throws {AuthError} When the request is invalid or expired.
 	 */
-	readonly getBrowserMobileVerification = async (
-		input: GetBrowserMobileVerificationInput
-	): Promise<DeviceVerification> => {
-		const verification =
-			await this.repository.resolveBrowserMobileVerification({
+	readonly getBrowserMobileVerification = async (input: GetBrowserMobileVerificationInput): Promise<DeviceVerification> => {
+		const verification = await this.repository.resolveBrowserMobileVerification({
 				userId: input.userId,
 				verificationId: input.verificationId,
 				applicationId: input.applicationId,
 				deviceId: input.deviceId,
-				browserTokenHash: this.tokenHasher.hash(
-					input.browserToken
-				),
+				browserTokenHash: this.tokenHasher.hash(input.browserToken),
 				resolvedAt: this.clock.now()
 			});
 
 		if (!verification) {
-			throw new AuthError(
-				'verification_invalid',
-				'The mobile verification is invalid or expired.'
-			);
+			throw new AuthError('verification_invalid', 'The mobile verification is invalid or expired.');
 		}
 
 		return verification;
@@ -678,12 +490,8 @@ class VerificationService {
 	 * @returns The rejected verification.
 	 * @throws {AuthError} When the rejection is invalid or too late.
 	 */
-	readonly rejectMobile = async (
-		input: ApproveMobileVerificationInput
-	): Promise<DeviceVerification> => {
-		const approvalTokenHash = this.tokenHasher.hash(
-			input.approvalToken
-		);
+	readonly rejectMobile = async (input: ApproveMobileVerificationInput): Promise<DeviceVerification> => {
+		const approvalTokenHash = this.tokenHasher.hash(input.approvalToken);
 
 		const verification = await this.repository.rejectMobile({
 			userId: input.userId,
@@ -693,10 +501,7 @@ class VerificationService {
 		});
 
 		if (!verification) {
-			throw new AuthError(
-				'verification_invalid',
-				'The mobile rejection is invalid or expired.'
-			);
+			throw new AuthError('verification_invalid', 'The mobile rejection is invalid or expired.');
 		}
 
 		return verification;
@@ -708,80 +513,47 @@ class VerificationService {
 	 * @returns The verified device.
 	 * @throws {AuthError} When the verification is not ready.
 	 */
-	readonly complete = async (
-		input: CompleteDeviceVerificationInput
-	): Promise<Device> => {
-		this.assertRequiredValue(
-			input.userId,
-			'The Firebase user identifier is required.'
-		);
+	readonly complete = async (input: CompleteDeviceVerificationInput): Promise<Device> => {
+		this.assertRequiredValue(input.userId, 'The Firebase user identifier is required.');
 
-		this.assertRequiredValue(
-			input.verificationId,
-			'The verification identifier is required.'
-		);
+		this.assertRequiredValue(input.verificationId, 'The verification identifier is required.');
 
-		this.assertRequiredValue(
-			input.browserToken,
-			'The browser verification token is required.'
-		);
+		this.assertRequiredValue(input.browserToken, 'The browser verification token is required.');
 
-		this.assertRequiredValue(
-			input.applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(input.applicationId, 'The application identifier is required.');
 
-		this.assertRequiredValue(
-			input.deviceId,
-			'The device identifier is required.'
-		);
+		this.assertRequiredValue(input.deviceId, 'The device identifier is required.');
 
-		const browserTokenHash = this.tokenHasher.hash(
-			input.browserToken
-		);
+		const browserTokenHash = this.tokenHasher.hash(input.browserToken);
 
-		const finalizingVerification =
-			await this.repository.beginFinalization({
+		const finalizingVerification = await this.repository.beginFinalization({
 			userId: input.userId,
 			verificationId: input.verificationId,
 			browserTokenHash,
 			applicationId: input.applicationId,
 			deviceId: input.deviceId,
 			finalizingAt: this.clock.now(),
-			recoveryLifetimeMs:
-				this.options.finalizationRecoveryMs
+			recoveryLifetimeMs: this.options.finalizationRecoveryMs
 		});
 
 		if (!finalizingVerification) {
-			throw new AuthError(
-				'verification_not_ready',
-				'The device verification is not approved.'
-			);
+			throw new AuthError('verification_not_ready', 'The device verification is not approved.');
 		}
 
-		const device = await this.devices.verifyPending(
-			input.userId,
-			input.deviceId,
-			input.applicationId
-		);
+		const device = await this.devices.verifyPending(input.userId, input.deviceId, input.applicationId);
 
-		const completedVerification =
-			await this.repository.completeFinalization({
+		const completedVerification = await this.repository.completeFinalization({
 				userId: input.userId,
 				verificationId: input.verificationId,
 				browserTokenHash,
 				applicationId: input.applicationId,
 				deviceId: input.deviceId,
 				consumedAt: this.clock.now(),
-				recoveryLifetimeMs:
-					this.options.finalizationRecoveryMs
+				recoveryLifetimeMs: this.options.finalizationRecoveryMs
 			});
 
 		if (!completedVerification) {
-			throw new AuthError(
-				'verification_not_ready',
-				'The device verification could not be finalized.'
-			);
+			throw new AuthError('verification_not_ready', 'The device verification could not be finalized.');
 		}
 
 		return device;
@@ -792,12 +564,8 @@ class VerificationService {
 	 * @param input - Pending device identity.
 	 * @returns The available confirmation modes.
 	 */
-	readonly getAvailableModes = async (
-		input: ResolveDeviceVerificationModesInput
-	): Promise<readonly DeviceVerificationMode[]> => {
-		const modes = await this.modePolicy.getAvailableModes(
-			input
-		);
+	readonly getAvailableModes = async (input: ResolveDeviceVerificationModesInput): Promise<readonly DeviceVerificationMode[]> => {
+		const modes = await this.modePolicy.getAvailableModes(input);
 
 		return [...modes];
 	};
@@ -808,19 +576,11 @@ class VerificationService {
 	 * @param mode - Requested confirmation mode.
 	 * @throws {AuthError} When the mode is unavailable.
 	 */
-	private readonly assertModeAvailable = async (
-		input: ResolveDeviceVerificationModesInput,
-		mode: DeviceVerificationMode
-	): Promise<void> => {
-		const availableModes = await this.getAvailableModes(
-			input
-		);
+	private readonly assertModeAvailable = async (input: ResolveDeviceVerificationModesInput, mode: DeviceVerificationMode): Promise<void> => {
+		const availableModes = await this.getAvailableModes(input);
 
 		if (!availableModes.includes(mode)) {
-			throw new AuthError(
-				'verification_mode_unavailable',
-				'The requested device verification mode is unavailable.'
-			);
+			throw new AuthError('verification_mode_unavailable', 'The requested device verification mode is unavailable.');
 		}
 	};
 
@@ -830,23 +590,11 @@ class VerificationService {
 	 * @returns The validated pending device.
 	 * @throws {AuthError} When the device binding is invalid.
 	 */
-	private readonly assertPendingDevice = async (
-		input: StartDeviceVerificationInput
-	): Promise<Device> => {
-		const device = await this.devices.findById(
-			input.userId,
-			input.deviceId
-		);
+	private readonly assertPendingDevice = async (input: StartDeviceVerificationInput): Promise<Device> => {
+		const device = await this.devices.findById(input.userId, input.deviceId);
 
-		if (
-			device.userId !== input.userId ||
-			device.applicationId !== input.applicationId ||
-			device.status !== 'pending'
-		) {
-			throw new AuthError(
-				'device_invalid',
-				'The pending device binding is invalid.'
-			);
+		if (device.userId !== input.userId || device.applicationId !== input.applicationId || device.status !== 'pending') {
+			throw new AuthError('device_invalid', 'The pending device binding is invalid.');
 		}
 
 		return device;
@@ -878,9 +626,7 @@ class VerificationService {
 			applicationId: input.applicationId,
 			deviceId: input.deviceId,
 			mode,
-			browserTokenHash: this.tokenHasher.hash(
-				browserToken
-			),
+			browserTokenHash: this.tokenHasher.hash(browserToken),
 			codeHash,
 			approvalTokenHash,
 			status: 'pending',
@@ -889,9 +635,7 @@ class VerificationService {
 			emailResendCount: 0,
 			emailLastSentAt: mode === 'email_code' ? now : null,
 			createdAt: now,
-			expiresAt: new Date(
-				now.getTime() + this.options.lifetimeMs
-			),
+			expiresAt: new Date(now.getTime() + this.options.lifetimeMs),
 			approvedAt: null,
 			rejectedAt: null,
 			finalizingAt: null,
@@ -904,33 +648,16 @@ class VerificationService {
 	 * @param input - Email verification request to validate.
 	 * @throws {TypeError} When a required value is empty.
 	 */
-	private readonly assertEmailManagementInput = (
-		input: ResendEmailVerificationInput
-	): void => {
-		this.assertRequiredValue(
-			input.userId,
-			'The Firebase user identifier is required.'
-		);
+	private readonly assertEmailManagementInput = (input: ResendEmailVerificationInput): void => {
+		this.assertRequiredValue(input.userId, 'The Firebase user identifier is required.');
 
-		this.assertRequiredValue(
-			input.verificationId,
-			'The verification identifier is required.'
-		);
+		this.assertRequiredValue(input.verificationId, 'The verification identifier is required.');
 
-		this.assertRequiredValue(
-			input.browserToken,
-			'The browser verification token is required.'
-		);
+		this.assertRequiredValue(input.browserToken, 'The browser verification token is required.');
 
-		this.assertRequiredValue(
-			input.applicationId,
-			'The application identifier is required.'
-		);
+		this.assertRequiredValue(input.applicationId, 'The application identifier is required.');
 
-		this.assertRequiredValue(
-			input.deviceId,
-			'The device identifier is required.'
-		);
+		this.assertRequiredValue(input.deviceId, 'The device identifier is required.');
 	};
 
 	/**
@@ -939,10 +666,7 @@ class VerificationService {
 	 * @param message - Safe diagnostic message.
 	 * @throws {TypeError} When the value is empty.
 	 */
-	private readonly assertRequiredValue = (
-		value: string,
-		message: string
-	): void => {
+	private readonly assertRequiredValue = (value: string, message: string): void => {
 		if (!value.trim()) {
 			throw new TypeError(message);
 		}

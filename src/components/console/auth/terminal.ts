@@ -71,10 +71,7 @@ export const createAuthenticationProgressMessages = () => {
 	);
 	const durationSeconds = getRandomInteger(1, 3);
 	const transferRate = Math.round(receivedKilobytes / durationSeconds);
-	const formattedReceivedKilobytes = receivedKilobytes.toLocaleString('en-US', {
-		minimumFractionDigits: 1,
-		maximumFractionDigits: 1
-	});
+	const formattedReceivedKilobytes = receivedKilobytes.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 	const formattedTransferRate = transferRate.toLocaleString('en-US');
 	const packageMessages = AUTHENTICATION_PACKAGES.map((packageEntry, index) => {
 		const packageNumber = index + 2;
