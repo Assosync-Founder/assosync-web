@@ -23,11 +23,13 @@ const isAuthenticationOptions = (
 
 /** Runs the Account-hosted passkey authentication ceremony.
  * @param authorizationId - Active browser-bound SSO authorization.
+ * @param cancellationUri - Trusted product endpoint receiving cancellations.
  * @param failureUri - Trusted product endpoint receiving ceremony failures.
  * @returns Transitional passkey authentication interface.
  */
 const PasskeyAuthenticationView = ({
 	authorizationId,
+	cancellationUri,
 	failureUri
 }: PasskeyAuthenticationViewProps) => {
 	const started = useRef(false);
@@ -110,13 +112,19 @@ const PasskeyAuthenticationView = ({
 				}
 
 				window.location.replace(binding.continuationUrl);
-			} catch {
-				window.location.replace(failureUri);
+			} catch (error: unknown) {
+				const redirectUri =
+					error instanceof Error &&
+					error.name === 'NotAllowedError'
+						? cancellationUri
+						: failureUri;
+
+				window.location.replace(redirectUri);
 			}
 		};
 
 		void authenticate();
-	}, [authorizationId, failureUri]);
+	}, [authorizationId, cancellationUri, failureUri]);
 
 	return (
 		<main className="mx-auto flex min-h-dvh max-w-lg items-center justify-center p-6">

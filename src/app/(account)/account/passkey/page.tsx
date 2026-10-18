@@ -6,15 +6,15 @@ import createAuthenticationFlashRelayUri from '@/lib/auth/web/authentication-fla
 import webAuthorizationService from '@/lib/auth/web/authorization-server';
 import type { PasskeyPageProps } from '@/types/passkey';
 
-/** Resolves the trusted product failure endpoint for an SSO authorization.
+/** Resolves trusted product endpoints for an SSO passkey ceremony.
  * @param authorizationId - Active Web authorization identifier.
  * @param browserToken - Browser-bound authorization secret.
- * @returns Configured failure endpoint, or null for an invalid authorization.
+ * @returns Cancellation and failure endpoints, or null for an invalid authorization.
  */
-const resolveFailureUri = async (
+const resolveRedirectUris = async (
 	authorizationId: string,
 	browserToken: string
-): Promise<string | null> => {
+): Promise<readonly [string, string] | null> => {
 	try {
 		const authorization = await webAuthorizationService.resolve(
 			authorizationId,
@@ -33,12 +33,20 @@ const resolveFailureUri = async (
 			authorization.redirectUri
 		).toString();
 
-		return await createAuthenticationFlashRelayUri(
-			client,
-			'passkey_authentication_failed',
-			authConfig.passkey.challengeLifetimeMs,
-			authenticationFlashUri
-		);
+		return Promise.all([
+			createAuthenticationFlashRelayUri(
+				client,
+				'passkey_authentication_cancelled',
+				authConfig.passkey.challengeLifetimeMs,
+				authenticationFlashUri
+			),
+			createAuthenticationFlashRelayUri(
+				client,
+				'passkey_authentication_failed',
+				authConfig.passkey.challengeLifetimeMs,
+				authenticationFlashUri
+			)
+		]);
 	} catch (error: unknown) {
 		console.error(JSON.stringify({
 			event: 'passkey_failure_uri_resolution_failure',
@@ -73,18 +81,21 @@ const PasskeyPage = async ({ searchParams }: PasskeyPageProps) => {
 		redirect(authConfig.routes.accountLogin);
 	}
 
-	const failureUri = await resolveFailureUri(
+	const redirectUris = await resolveRedirectUris(
 		authorizationId,
 		browserToken
 	);
 
-	if (!failureUri) {
+	if (!redirectUris) {
 		redirect(authConfig.routes.accountLogin);
 	}
+
+	const [cancellationUri, failureUri] = redirectUris;
 
 	return (
 		<PasskeyAuthenticationView
 			authorizationId={authorizationId}
+			cancellationUri={cancellationUri}
 			failureUri={failureUri}
 		/>
 	);

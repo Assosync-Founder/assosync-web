@@ -183,6 +183,9 @@ export type VerifyPasskeyAuthenticationInput = {
 export type PasskeyAuthenticationViewProps = {
 	readonly authorizationId: string;
 
+	/** Trusted product endpoint receiving cancelled passkey ceremonies. */
+	readonly cancellationUri: string;
+
 	/** Trusted product endpoint receiving failed passkey ceremonies. */
 	readonly failureUri: string;
 };
